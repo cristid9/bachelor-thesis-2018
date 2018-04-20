@@ -3,8 +3,8 @@ Ideas collected in order to generate the design of the network
 
 Usefull references 
 ------------------
-* Nerual Turin Machine
-* Differentiable Neural COmputer
+* Nerual Turing Machine
+* Differentiable Neural Computer
 * seq2seq
 
 Abstract
