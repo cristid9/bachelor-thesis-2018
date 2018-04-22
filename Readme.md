@@ -6,3 +6,4 @@ Resources so far:
 * https://adventuresinevolutionblog.wordpress.com/2016/09/17/minimal-sorting-networks/
 * http://aclweb.org/anthology/I17-3017
 * http://psycnet.apa.org/record/1999-02657-007 -- Seven times seven is about fifty
+* https://www.sciencedirect.com/science/article/pii/S0020025512007670
