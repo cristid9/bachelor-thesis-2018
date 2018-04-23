@@ -9,3 +9,4 @@ Resources so far:
 * https://www.sciencedirect.com/science/article/pii/S0020025512007670
 * https://github.com/apache/incubator-mxnet/tree/master/example/bi-lstm-sort -- sort numbers using lstm architecture 
 * https://rylanschaeffer.github.io/content/research/neural_turing_machine/main.html
+* https://github.com/carpedm20/NTM-tensorflow
