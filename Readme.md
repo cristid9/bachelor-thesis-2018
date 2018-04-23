@@ -7,4 +7,4 @@ Resources so far:
 * http://aclweb.org/anthology/I17-3017
 * http://psycnet.apa.org/record/1999-02657-007 -- Seven times seven is about fifty
 * https://www.sciencedirect.com/science/article/pii/S0020025512007670
-* https://github.com/apache/incubator-mxnet/tree/master/example/bi-lstm-sort -- spring number i sunt astm architecture 
+* https://github.com/apache/incubator-mxnet/tree/master/example/bi-lstm-sort -- sort numbers using lstm architecture 
