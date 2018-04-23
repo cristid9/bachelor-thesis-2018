@@ -8,3 +8,4 @@ Resources so far:
 * http://psycnet.apa.org/record/1999-02657-007 -- Seven times seven is about fifty
 * https://www.sciencedirect.com/science/article/pii/S0020025512007670
 * https://github.com/apache/incubator-mxnet/tree/master/example/bi-lstm-sort -- sort numbers using lstm architecture 
+* https://rylanschaeffer.github.io/content/research/neural_turing_machine/main.html
