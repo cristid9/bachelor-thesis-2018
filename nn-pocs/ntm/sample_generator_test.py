@@ -1,15 +1,12 @@
 import unittest
 import copy
-from training_samples_generator import generate_samples
+from training_samples_generator import QuickSortSamplesGenerator
+from training_samples_generator import BubbleSortSamplesGenerator
 
 class TestSampleGeneration(unittest.TestCase):
 
-    def test_quick_sort_samples(self):
-        """
-        More versions of quick sort should be added soon.
-        """
-        samples = generate_samples(10)
-        for sample in samples:
+    def assert_helper(self, samples):
+         for sample in samples:
             sorted_version = sorted(sample[0])
             working_list = copy.deepcopy(sample[0])
 
@@ -18,7 +15,13 @@ class TestSampleGeneration(unittest.TestCase):
                 working_list[i], working_list[j] = working_list[j], working_list[i]
 
             # %%todo%% add more suggestive error messages
-            self.assertEquals(sorted_version, working_list, "Quick sort test case failed")
+            self.assertEquals(sorted_version, working_list)
+
+
+    def test_quick_sort_samples(self):
+        samples = QuickSortSamplesGenerator().generate_samples(10)
+        self.assert_helper(samples)
+
 
     def test_merge_sort_samples(self):
         self.assertEquals(True, True)
@@ -27,7 +30,9 @@ class TestSampleGeneration(unittest.TestCase):
         self.assertEquals(True, True)
 
     def test_bubble_sort_samples(self):
-        self.assertEquals(True, True)
+        samples = BubbleSortSamplesGenerator().generate_samples(10)
+        self.assert_helper(samples)
+
 
 if __name__ == '__main__':
     unittest.main()
