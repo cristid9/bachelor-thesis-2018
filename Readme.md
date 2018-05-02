@@ -11,3 +11,4 @@ Resources so far:
 * https://rylanschaeffer.github.io/content/research/neural_turing_machine/main.html
 * https://github.com/carpedm20/NTM-tensorflow
 * http://www.robots.ox.ac.uk/~tvg/publications/talks/NeuralTuringMachines.pdf
+* https://medium.com/snips-ai/ntm-lasagne-a-library-for-neural-turing-machines-in-lasagne-2cdce6837315
