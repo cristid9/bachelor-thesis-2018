@@ -1,0 +1,64 @@
+<html>
+    <head>
+        <title>
+            foo
+        </title>
+        <!-- externalize the css -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.js">
+        </script>
+
+        <script
+            src="https://code.jquery.com/jquery-2.2.4.min.js"
+            integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+            crossorigin="anonymous">
+        </script>
+    </head>
+
+    <body>
+
+        <div id="network_area">
+            <div id="network_core">
+
+                <!-- The prototype network size should scale -->
+                <table id="network_prototype" border="solid" width="600px" height="300px">
+                    <tr>
+                        <td>
+                            test
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        
+            <div id="network_controls">
+
+                <div id="network_misc">
+                    <label for="num_wires">
+                        Prototype network, num wires: 
+                    </label>
+                    <input type="text" name="num wires" id="num_wires"/>
+                </div>
+
+                <div id="network_buttons">
+                    <button type="button" id="generate">
+                        Button
+                    </button>
+        
+                    <button type="button" id="chose_another_model">
+                        Choose another model
+                    </button>
+        
+                    <button type="button" id="reset_num_wires">
+                        Reset number of wires
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript" src="main.js"> </script>   
+        <script type="text/javascript" src="handlers.js"> </script>
+        <script type="text/javascript"> 
+            main();
+        </script>
+
+    </body>
+</html>
