@@ -1,20 +1,243 @@
-\documentclass{article}% use option titlepage to get the title on a page of its own.
+
+\documentclass[12pt]{article}
 %\usepackage{blindtext}
 \usepackage{listings}
 \usepackage{tikz}
 \usepackage{graphicx}
 \graphicspath{{./images/}}
-\title{Crearea retelelor de sortare folosind retele neuronale recurente}
+\usepackage{eurosym}
+\usepackage{textcomp}
+\usepackage{afterpage}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{amsfonts}
+\usepackage{sectsty}
+\usepackage{multicol}
 
-\date{2018\\ Iulie}
 
-\author{Danila Marius Cristian}
+\lstset{
+   basicstyle=\fontsize{9}{10}\selectfont\ttfamily
+}
+\newcommand\blankpage{%
+    \null
+    \thispagestyle{empty}%
+    \addtocounter{page}{-1}%
+    \newpage}
+
+\newenvironment{tightcenter}{%
+  \setlength\topsep{0pt}
+  \setlength\parskip{0pt}
+  \begin{center}
+}{%
+  \end{center}
+}
+
+    
+\allsectionsfont{\raggedright}
+
 
 \begin{document}
 
-\maketitle
+\afterpage{\blankpage}
 
-\section{Retele de sortare, prezentare}
+\begin{titlepage}
+
+\begin{center}
+
+UNIVERSITATEA "ALEXANDRU IOAN CUZA" DIN IAȘI
+\\
+\textbf{Facultatea de Informatica din Iasi}
+\end{center}
+
+   \vspace{20mm}
+
+\begin{center}
+    \end{center}
+   \vspace{10mm}
+\begin{center}
+	\Large{LUCRARE DE LICENTA}\\
+	
+	\vspace{10mm}
+	
+	\large \textbf{CREARE RETELELOR DE SORTARE FOLOSIND DEEPLEARNING}\\
+	\vspace{5mm}
+		
+	\vspace{5mm}
+	\large\textit {DANILA MARIUS CRISTIAN}
+	\\
+	\vspace{20mm}
+	\textbf{Data: }\textit{Iulie, 2018}\\
+	\vspace{10mm}
+	\textbf{Coordonator}\\
+	\textbf{\textit{Lect. Dr. Frasinaru Cristian}}
+	\vspace{30mm}
+\end{center}
+\end{titlepage} 
+
+\renewcommand{\refname}{Bibliografie}  % for the article class
+\renewcommand{\contentsname}{Cuprins}
+
+
+
+\begin{abstract}
+
+Scopul acestei lucrari este de a construi un algoritm de deeplearning care sa genereze compartorii dintr-o retea de marime $N$. $N$ reprezinta numarul de fire din retea.
+Desi exista abordari neimperative functionale, care genereaza rezultate intr-un timp multumitor, nu s-a mai incercat pana acum generarea de retele de sortare prin aceasta abordare. Rezultatul obtinut este un model antrenat care produce rezultate pentru retele de dimensiuni mici.
+
+\tableofcontents
+
+\end{abstract}
+
+\vspace{80mm}
+
+\pagebreak
+
+\section{Introducere}
+
+O retea de sortare reprezinta un model abstract din informatica, compus din fire si comparatori. Scopul comparatorilor este de a interschimba 2 numere de pe firele pe care sunt plasati. Desi sunt modele simple, retelele de sortare au aplicatii numeroase in calculul paralel si sunt folosite la sortarea seturilor de numere in cadrul placilor grafice.
+ 
+   In cadrul acestei lucrari mi-am propus sa dezvolt un model capabil sa genereze, pe baza unui numar $N$ de fire primit ca input, lista de comparatori necesari pentru o retea de sortare cu $N$ fire. In cadrul proiectului am dezvoltat si o interfata web ce permite vizualizarea cat si simularea unei sortari pe reteaua obtinuta de model. Cu aceasta ocazie scoatem in lumina si elementul de inovatie al acestei lucrari, si anume ca pana acum nu s-a mai incercat generarea de retele de sortare prin aceasta abordare. In spate, modelul foloseste o arhitectura de retele neuronale introdusa recent (\textit{20 Oct 2014}), optimizata pentru invatarea de algoritmi imperativi. Modelul obtinut produce rezultate pentru retele de dimensiuni mici, de 2, 3 sau 4 fire. Nu produce comparatori pentru retele care sa sorteze complet siruri de numere mai mari de 5 elemente, dar acest lucru lasa loc de extindere a proiectului pe viitor.
+
+Motivatia din spatele alegerii proiectului de fata este data de viteza de generare ca timp a retelelor de sortare ce este semnificativ mai buna pe retele de dimeniuni mari fata celelalte abordari.
+
+Proiectul inglobeaza 2 modele antrenate pe seturi de antrenament diferite, bazate pe rezultatele a 2 algoritmi imperativi. Acesti 2 algoritmi imperativi au la baza modul de generare a interschimbarilor din algoritmii de sortare \textit{Bubble Sort} si \textit{Insertion Sort}. Fiecare model incearca sa produca rezultatele similare cu unul dintre cei 2 algoritmi imperativi folositi. Cele doua modele sunt rulate de o a doua componenta a proiectului, \textit{model manager}, intr-un thread. Scopul acestei componente este sa centralizeze rezultatele de la cele doua modele si sa comunice cu componenta \textit{backend} din spatele interfetei web. Intr-un final, ultima componenta a proiectului este cea de interfata web care afiseaza retelele produse de cele doua modele.
+
+
+\section{Descrierea solutiei}
+Solutia problemei consta intr-un model antrenat pe un set de date produs de un algoritm imperativ de generare a retelelor de tip bubble sorting network si insertion sorting network. Peste modele generate avem o interfata web se permite vizualizarea in browser a retelei generate.
+
+Arhitectura proiectului este:
+
+\begin{center}
+\includegraphics[scale=0.8]{architecture}
+\end{center}
+
+Arhitectural, avem un server web care ii trimite clientului codul interfeti grafice folosite la reprezentarea inputului pentru un numar dat de fire. Utilizatorul va alege ca input numarul de fire folosit si se va realiza un request ajax in spate cate serverul web. Serverul se conecteaza printr-un socket la model manager, ce coordoneaza cele doua modele antrenate si va trimite serverului prin socket comparatorii generati, in functie de modelul ales de utilizator. Serverul trmite la client comparatorii, iar clientul creeaza diagrama retelei respective.
+
+\subsection{Arhitectura modelului}
+
+Modelul este un "Neural Turing Machine". Pentru constructia modelului am folosit in spate un framework numit ntm-lasage, optimizat pentru crearea de modele de acest fel. Se abstractizeaza in acest fel detalii de implementare. 
+
+Modelul contine o memorie cu un layout de $1024$x$160$ celule. Ca functie de loss am folosit crossentropia binara, pentru ca intern numerele ce vin ca input in model sunt reprezentate ca siruri binare.
+
+Procesul de backpropagation este abstractizat de model. Actualizarea weighturilor din retea este optimizata cu rmsprop.
+Datele de antrenament sunt procesate de retea in batchuri de 1.
+
+Structura inputului retelei este de un vector de 9 elemente ce reprezinta codificarea in binar a numarului de fire din retea. Outputul retelei este un vector tridimensional cu $2*numar\_comparatori$ elemente. Elementele din vector sunt semantic grupate 2 cate 2, codificate ca un sir de biti, si reprezinta pozitiile comparatorilor din retea. 
+
+\subsection{Antrenarea modelului}
+
+Modelul ce genereaza retele bubble sorter a fost antrenat pe un set de input 1000 de elemente, pe numere mai mari de atat timpul necesar finalizarii procesului de antrenament devine foarte mare. Datele din setul de antrenament au fost generate conform algoritmului:
+\begin{lstlisting}
+    def bubble_sorter(n):
+        if n <= 1:
+            return []
+
+        ret_val = []
+        for i in range(0, n - 1):
+            ret_val.append((i, i + 1))
+        ret_val += self.dummy_sorter(n - 1)
+        return ret_val
+\end{lstlisting}
+
+si arata astfel pentru un set de antrenament de 5 elemente:
+
+\begin{lstlisting}
+[2, [(0, 1)]]
+[3, [(0, 1), (1, 2), (0, 1)]]
+[4, [(0, 1), (1, 2), (2, 3), (0, 1), 
+	(1, 2), (0, 1)]]
+[5, [(0, 1), (1, 2), (2, 3), (3, 4), 
+	(0, 1), (1, 2), (2, 3), (0, 1), (1, 2), (0, 1)]]
+[6, [(0, 1), (1, 2), (2, 3), (3, 4), 
+	(4, 5), (0, 1), (1, 2), (2, 3), 
+	(3, 4), (0, 1), (1, 2), (2, 3), (0, 1), (1, 2), (0, 1)]]
+\end{lstlisting}
+
+Insa date de mai sus reprezinta la nivel abstract inputul si outputul dorit pentru retea. In proiect datele sunt reprezentate in binar ca un sir de 9 biti, iar interschimbarile nu sunt reprezentate explicit ca tuple. Reteaua va produce, practic, o lista de siruri biti ce vor fi grupate, in ordine, 2 cate 2.
+
+Spre exemplu, pentru urmatorul input:
+
+\begin{lstlisting}
+numpy.array([[[0, 0, 0, 0, 0, 0, 0, 1, 1]]])
+\end{lstlisting}
+
+reprezinta dimensiunea 3, adica reteau va trebui sa genereze setul de comparatori pentru o retea de 3 elemente. Inputul de mai sus a fost testat pe o retea antrenata pe un set de date 1000 elemente, modelul este Bubble Sorter. Outputul produs este urmatorul:
+\begin{center}
+\begin{multicols}{2}
+\begin{lstlisting}
+[[[0.000751546365971,
+0.000769892576671,
+0.000637261131599,
+0.000600783421602,
+0.12773718494,
+0.239040904467,
+0.214272843324,
+0.370771723772,
+0.465849417004],
+
+[9.00920625725e-05,
+7.82020981282e-05,
+6.5095684253e-05,
+6.73165195701e-05,
+0.180481531645,
+0.244833481652,
+0.273710496834,
+0.454686659751,
+0.496889833317],
+
+[4.46837405637e-05,
+3.44817119736e-05,
+2.6885035585e-05,
+3.21667374046e-05,
+0.262205621903,
+0.240104608732,
+0.341346314965,
+0.501759117299,
+0.507289515972],
+
+[3.48919682303e-05,
+2.59198402876e-05,
+1.83589819237e-05,
+2.46684454266e-05,
+0.330040528556,
+0.237285575094,
+0.394284580217,
+0.525120693702,
+0.510196603956],
+
+[3.10455175941e-05,
+2.33229850784e-05,
+1.51453999616e-05,
+2.18735040572e-05,
+0.376419535208,
+0.237146807326,
+0.429571992622,
+0.537611938861,
+0.511490463268],
+
+[2.89867797738e-05,
+2.23753419482e-05,
+1.35824510377e-05,
+2.04069513415e-05,
+0.406359755172,
+0.238643669264,
+0.452255805808,
+0.54490706061,
+0.513243797725]]]
+\end{lstlisting}
+\end{multicols}
+\end{center}
+
+Semnificatia fiecarui double din lista este probabilitatea ca bitul respectiv sa fie 1. Acuratetea probabilitatilor se sporeste cu antrenarea sporita a modelului. Intr-un final, se grupeaza 2 cate 2 elementele din lista si se decodifica din binar in decimal.
+
+
+
+\section{Retele de sortare}
+
+In cadrul acestui capitol prezentam acestui capitol prezentam fundamentele teoretice necesare pentru intelegerea conceptului de \textit{retea de sortare} cat si aplicatiile acestora in practica
+
+\subsection{Prezentare}
 
 \noindent Formal, definim o retea de sortare de dimensiune $N$ ca fiind o colectie de $N$ fire si $M$ comparatori. Comparatorii \noindent au rolul de a interschimba doua elemente aflate pe fire diferite, elementele trebuie sa satisfaca un predicat $P$ \noindent astfel incat la finalul aplicarii secventei de comparatori pe elementele aflate in retea sa obtinem o secventa aflata in ordine.
 
@@ -33,6 +256,33 @@
 \draw[thick] (4,2) -- (4,3);
 \end{tikzpicture}
 \end{center}
+
+\subsection{Retelele optimale}
+
+\subsubsection{Prezentare}
+In aceasta sectiune a lucrarii dorim sa amintim despre \textit{retelele lui Green}, intrucat folosind metoda lui \textit{Green} de construire a retelelor obtinem numarul minimal de comparatori.
+
+Mai jos afisam rezultatul metodei lui \textit{Green} pentru o retea de marime $16$:
+\begin{center}
+\includegraphics[scale=1.0]{green_net}
+\end{center}
+Acesta retea are $60$ de comparatori, care reprezinta cea mai mica valoare cunoscuta pentru o retea cu 16 inputuri[16][17]. Comparatorii dintr-o astfel de retea sunt simetric aranjati de la axa orizontala pana in mijlocul retelei. Acest tip de retele au reprezentat pentru unii cercetatorii obiectiv de studiu pentru dezvoltarea algoritmilor evolutivi care genereaza retele de sortare. 
+
+\subsection{Principiul 0-1}
+
+\subsubsection{Enunt}
+\textit{Principiul 0-1} este o modalitate de verificare a corectitudinii unei retele de sortare. Conform acestuia, o retea de sortare care sorteaza corect orice de secventa de $0$ si $1$, va sorta corect orice secventa de numere.
+
+\subsubsection{Demonstratie}
+\textbf{Lemma:} Presupunem $f$ o functie monotona, crescatoare. Atunci, daca o retea mapeaza $x_1$, $x_2$,...,$x_n$ la $y_1$, $y_2$,...$y_n$, va mapa $f(x_1)$, $f(x_2)$,..., $f(x_n)$ la $f(y_1)$, $f(y_2)$,...,$f(y_n)$. 
+
+\textbf{Demonstratie:} Prin inductie la numarul de comparatori din retea folosind:
+\begin{tightcenter} 
+ $f(min(a, b)) = min(f(a), f(b))$\\
+ $f(max(a, b)) = max(f(a), f(b))$\\
+\end{tightcenter}
+
+Sa presupunem ca o \textit{retea} nu este retea de sortare. Atunci, va mapa valorile $x_1$, $x_2$,...,$x_n$ arbitrare, la $y_1$, $y_2$,..., $y_n$. Unde $y_i > y_{i+1}$ pentru $1 \leq i  < n$. Presupunem $f(x) = 1$ daca si numai daca $x \geq y_i$, $0$ altfel. Reteaua va mapa $f(x_1)$, $f(x_2)$,..., $f(x_n)$ la $f(y_1)$, ..., $f(y_i)=1$, $f(y_{i+1})=0$, ..., $f(y_n)$. Astfel, reteaua nu va sorta toate inputurile de tipul $0-1$.
 
 
 \subsection{Metode imperative de generare a retelelor de sortare}
@@ -97,8 +347,14 @@ Pentru un numar de fire dat, $n$, generam lista de comparatori, adica conexiunil
 %\break
 
     Aceste arhitecturi de retele de sortare nu sunt optimale si vor sorta un sir de numere ca input in timp
-$O(n^2)$. Retelele optimale si cele mai des folosite in practica sunt bazate pe algoritmul bitonic sort, acestea ating complexitate de $O(nlog^(n))$. Insa motivul pentru care am prezentat bubble sorting network si insertion sorting network este
-ca bazandu-ne pe acesti algoritmi am generat datele de antrenament pentru modelul dezvoltat.
+$O(n^2)$. Retelele optimale si cele mai des folosite in practica sunt bazate pe algoritmul bitonic sort, acestea ating complexitate de $O(nlog^2(n))$. Insa motivul pentru care am prezentat bubble sorting network si insertion sorting network este
+ca bazandu-ne pe acesti algoritmi am generat datele de antrenament pentru modelul dezvoltat. Motivatia ar fi ca, cel putin din experimentele realizate in cadrul acestui proiect, este mai usor de antrenat un model care sa produca date relevante atunci cand primeste date de antrenament generate pe baza acestor algoritmi.
+
+\subsection{Generarea retelelor de sortare folosind algoritmi evolutivi}
+
+\subsection{Aplicatii}
+Cea mai la indemana aplicatie in practica a retelelor de sortare o reprezinta sortarea pe placile grafice. Placile grafice dispozitive orientate puternic spre paralelizarea instructiunilor, pe arhitectura \textit{single-instruction, multiple data (SIMD}. Si avand in vedere si ca placile grafice depasesc in performanta CPU-ul cand vine vorba de algoritmi cu limita de memorie si timp de calcul, retelele de sortare devin o optiune eficienta.
+
 
 \section{Retele neuronale, prezentare}
 
@@ -114,60 +370,169 @@ Un caz particular de retele neuronale recurente sunt *masinile turing neurale*. 
 
 Motivul prezentarii scenariului de mai sus este ca hiperparametrii si structura straturilor de neuroni dintr-o retea de neuronala folosita la sortarea de numere sunt similari in proportie foarte mare cu cei din reteaua proiectata sa genereze retele de sortare.
 
-\section{Tehnologii folosite}
+\subsection{Neural Turing Machine (NTM)}
 
+Retelele NTM fac partea din clasa retelelor neuronale recurente si sunt introduse relativ recent. Au fost introduse intr-un articol publicat de Alex Graves in 2014. Acest model de retea neuronala combinata capacitatea de pattern matching a retelelor neuronale cu capacitatea algoritmica a calculatoarelor programabile. Mai exact, putem folosi acest model de retea pentru a invata algoritmti simpli. In paperul introdus de Graves sunt aduse rezultate pentru algoritmi de copiere a unui sir sau sortare. Aceste aspecte ne inspira o probabilitate mare ca o retea bazata pe acest model poate produce rezultate multumitoare pentro problema abordata.
 
-\section{Descrierea solutiei}
-Solutia problemei consta intr-un model antrenat pe un set de date produs de un algoritm imperativ de generare a retelelor de tip bubble sorting network si insertion sorting network. Peste modele generate avem o interfata web se permite vizualizarea in browser a retelei generate.
+\subsubsection{Descriere}
 
-Arhitectura proiectului este:
+Neural Turing Machines sunt inspirate din doua lumi: Machine Learning si Teoria Computabilitatii. Prima le permite calculatoarelor sa realizeze taskuri care, desi pentru oameni sunt usoare, se credeau grele pentru calculatoare, precum computer vision. A doua defineste formal lucrurile de care este capabil un calculator. 
+
+Legatura dintre inteligenta artificiala si teoria computatiei in 1940. Modelul introdus de el, Masina Turing, e un model computational clasic care opereaza pe o banda de memorie infinita si un cap care poate sa scrie sau sa citeasca. Pe baza acestor aceste rezultate se inspira si Neural Turing Machines.
+
+Un exemplu de NTM desfasurat in timp:
 
 \begin{center}
-\includegraphics[scale=0.8]{architecture}
+\includegraphics[scale=0.2]{ntm}
 \end{center}
 
-Arhitectural, avem un server web care ii trimite clientului codul interfeti grafice folosite la reprezentarea inputului pentru un numar dat de fire. Utilizatorul va alege ca input numarul de fire folosit si se va realiza un request ajax in spate cate serverul web. Serverul se conecteaza printr-un socket la model manager, ce coordoneaza cele doua modele antrenate si va trimite serverului prin socket comparatorii generati, in functie de modelul ales de utilizator. Serverul trmite la client comparatorii, iar clientul creeaza diagrama retelei respective.
+Componenta de controller din cadrul unui Neural Turing Machine este o retea neuronala care pune la dispozitie reprezentarea interna a inputului care este folosit de capetele de scriere si citire ca sa poate interactiona cu memoria. Reprezentarea aceasta nu este identica cu cea stocata in memorie. Tipul de controler pe care il alegem reprezinta cea mai semnificativa alegere arhitecturala. Controllerul poate fi fie o retea feed-forward, fie o retea recurenta.
 
-\subsection{Arhitectura modelului}
+Capetele de scriere si citire sunt singurele componente din cadrul unui Neural Turing Machine care interactioneaza in mod direct cu memoria. Intern, comportamentul fiecarui dintre capete este controlat de vectorul de weighturi care este actualizat la fiecare pas in timp. Fiecare weight din vector corespunde cu gradul de interactiune cu fiecare celula din memorie. Un weight de 1 focuseaza atentia NTM-ului spre celula respectiva.
 
-Modelul este un "Neural Turing Machine". Pentru constructia modelului am folosit in spate un framework numit ntm-lasage, optimizat pentru crearea de modele de acest fel. Se abstractizeaza in acest fel detalii de implementare. 
+Reprezentare vizuala a notiunilor descrise mai sus:
 
-Modelul contine o memorie cu un layout de $1024$x$160$ celule. Ca functie de loss am folosit crossentropia binara, pentru ca intern numerele ce vin ca input in model sunt reprezentate ca siruri binare.
+\begin{center}
+\includegraphics[scale=0.3]{rw_head}
+\end{center}
 
-Procesul de backpropagation este abstractizat de model. Actualizarea weighturilor din retea este optimizata cu rmsprop.
-Datele de antrenament sunt procesate de retea in batchuri de 1.
+\subsubsection{Aplicatii}
 
-Structura inputului retelei este de un vector de 9 elemente ce reprezinta codificarea in binar a numarului de fire din retea. Outputul retelei este un vector tridimensional cu $2*numar\_comparatori$ elemente. Elementele din vector sunt semantic grupate 2 cate 2, codificate ca un sir de biti, si reprezinta pozitiile comparatorilor din retea. 
+\section{Tehnologii folosite}
 
-\subsection{Antrenarea modelului}
+In cadrul proiectului am facut uz de o serie de frameworkuri si biblioteci pentru a fi scutiti de unele detalii de implementare. In aceasta sectiune vom prezenta pe scurt tehnologiile principale folosite.
 
-Modelul ce genereaza retele bubble sorter a fost antrenat pe un set de input 1000 de elemente, pe numere mai mari de atat timpul necesar finalizarii procesului de antrenament devine foarte mare. Datele din setul de antrenament au fost generate conform algoritmului:
-\begin{lstlisting}
-    def bubble_sorter(n):
-        if n <= 1:
-            return []
+\subsection{NTMLasagne}
 
-        ret_val = []
-        for i in range(0, n - 1):
-            ret_val.append((i, i + 1))
-        ret_val += self.dummy_sorter(n - 1)
-        return ret_val
-\end{lstlisting}
+NTMLasagne este frameworkul pe care l-am folosit in proiect ca sa creem modelul. Pe scurt, este un wrapper peste Lasagne  ce ne permite sa creeam "Neural Turing Machines" intr-un mod simplificat, abstractizand detalii de implementare. Ne sunt puse module pentru stratul NTM (en. NTMLayer) unde toate componentele precum capetele de scriere, controllerul si memoria pot fi customizate. In cadrul acestui proiect am ales sa nu customizam niciuna dintre componente. In schimb, le-am folosit pe cele default oferite de framework.
 
-si arata astfel pentru un set de antrenament de 5 elemente:
-
-\begin{lstlisting}
-[2, [(0, 1)]]
-[3, [(0, 1), (1, 2), (0, 1)]]
-[4, [(0, 1), (1, 2), (2, 3), (0, 1), 
-	(1, 2), (0, 1)]]
-[5, [(0, 1), (1, 2), (2, 3), (3, 4), 
-	(0, 1), (1, 2), (2, 3), (0, 1), (1, 2), (0, 1)]]
-[6, [(0, 1), (1, 2), (2, 3), (3, 4), 
-	(4, 5), (0, 1), (1, 2), (2, 3), 
-	(3, 4), (0, 1), (1, 2), (2, 3), (0, 1), (1, 2), (0, 1)]]
-\end{lstlisting}
+Motivatia din spatele alegerii acestui framework este, chiar daca documentatia este relativ putina, comunitatea puternica din spatele proiectului si faptul ca procesul de dezvoltare este activ.
 
 
+\subsection{Lasagne}
+
+Lasagne este o biblioteca minimalista folosita pentru construirea de retele neuronale. Permite construire de retele feed-forward, cat si de retele convolutionale, ofera implementari pentru metode de optimizare folosite des (i.e. ADAM si RMSProp). De asemenea, modele construite in Lasagne pot fi antrenate fie pe CPU sau GPU pentru ca biblioteca foloseste Theano in spate.
+
+
+\subsection{Theano}
+
+Theano este o biblioteca de python ce permite definirea si optimizarea de expresii matematice ce contin array-uri multidimensionale intr-un mod eficient. Chiar daca in momentul de fata Tensorflow este alegerea facuta de majoritatea proiectelor, theano este folosit de cele 2 biblioteci specificate anterior si este in general mai flexibil.
+
+\subsection{Python}
+
+Python este un limbaj de scripting, multi paradigma. Motivul pentru care am ales sa implementam modelul in python este sintaxa usoara, suportul mare pentru biblioteci si frameworkuri de deep learning, atat ca documentatie, cat si ca implementari efective. 
+
+De asemenea componenta de "model manager" care ruleaza intr-un thread fiecare model este scrisa in python.
+
+
+\subsection{Java}
+
+Java este un limbaj de programare orientat-obiect, puternic tipizat, conceput de către James Gosling la Sun Microsystems (acum filială Oracle) la începutul anilor ʼ90, fiind lansat în 1995. Cele mai multe aplicații distribuite sunt scrise în Java, iar noile evoluții tehnologice permit utilizarea sa și pe dispozitive mobile gen telefon, agenda electronică, palmtop etc. În felul acesta se creează o platformă unică, la nivelul programatorului, deasupra unui mediu eterogen extrem de diversificat. Acesta este utilizat în prezent cu succes și pentru programarea aplicațiilor destinate intranet-urilor
+
+In proiect, Java a fost folosit la crearea backendului pentru interfata web. Motivatia alegerii este experienta puternica anterioara a autorului.
+
+\subsection{Spring Boot}
+
+In cadrul proiectului am pus la dispozitie si o interfata web in care se afiseaza reprezentarea vizuala a retelei generate de modelul ales de utilizator. Backendul acestei interfete este scris in Java si are in spate Spring Boot.
+
+Pe scurt Spring Boot este frameworkul web pe care l-am folosit pentru a scrie serverul proiectului. Ni se pune la dispozitie posibilitatea de a scrie relativ usor o aplicatie web pe arhitectura MVC. 
+
+
+Motivul pentru care s-a ales Spring Boot in pofida unui alt framework web de Java este documentatia vasta si experienta anterioara a autorului cu aceasta tehnologie.
+
+\subsection{RaphaelJS}
+
+RaphaelJS reprezinta biblioteca de javascript folosita pentru desenarea in browser retelei generate de modelul ales de utilizator. RaphaelJS este un wrapper peste WebGL cu un API relativ usor de folosit.
+
+
+\subsection{Twitter Bootstrap}
+
+Twitter Bootstrap este un framework web pentru componenta de frontend. Se pun la dispozitie mai multe clase CSS pentru crearea de componente vizuale precum butoane, bare de meniu, cat si un mecanism specific de de pozitionare a continutului.
+
+Motivul pentru care am introdus si aceasta dependinta in stiva de tehnologii folosita in proiect si nu am creat toata interfata in RaphaelJS este performanta. Desenarea intregului design si implementarea si mecanicilor din spate (precum gestionarea apasarilor de buton) ar fi fost remarcabil mai lenta.
+
+\section{Concluzii}
+
+ In momentul de fata, cele doua modele antrenate, nu produc rezultate multumitoare, nu sunt capabile sa genereze comparatori pentru retele de dimensiuni mari. Optimizarea acestor modele pentru inputuri $N>4$ poate reprezenta o directie de viitor pentru proiect. Acest lucru ar putea fi realizat printr-o metoda introdusa relativ recent (\textit{Mai 2018})[18].
+
+Readucem in atentie ca aceasta lucrare contine un element de noutate, intrucat aceasta abordarea de a genera retele de sortare folosind \textit{deeplearning} nu a mai fost atinsa pana in acest moment. 
+  
+ 
+
+
+\pagebreak
+\begin{thebibliography}{12}
+\bibitem{l1} 
+ https://github.com/primaryobjects/nnsorting
+
+\bibitem{l2} 
+$https://github.com/drforester/Sequence\_to\_Sequence\_Sorting$
+
+\bibitem{l3} 
+ https://github.com/aditya-prasad/dnnet
+
+\bibitem{l4} 
+ https://adventuresinevolutionblog.wordpress.com/2016/09/17/minimal-sorting-networks/
+
+\bibitem{l5} 
+ http://aclweb.org/anthology/I17-3017
+
+
+\bibitem{l6} 
+ http://psycnet.apa.org/record/1999-02657-007 -- Seven times seven is about fifty
+
+\bibitem{l7} 
+ https://www.sciencedirect.com/science/article/pii/S0020025512007670
+
+\bibitem{l8} 
+ https://github.com/apache/incubator-mxnet/tree/master/example/bi-lstm-sort -- sort numbers using lstm architecture 
+
+\bibitem{l9} 
+ $https://rylanschaeffer.github.io/content/research/neural\_turing\_machine/main.html$
+
+\bibitem{l10} 
+ https://github.com/carpedm20/NTM-tensorflow
+
+\bibitem{l11} 
+ http://www.robots.ox.ac.uk/~tvg/publications/talks/NeuralTuringMachines.pdf
+
+\bibitem{l12} 
+ https://medium.com/snips-ai/ntm-lasagne-a-library-for-neural-turing-machines-in-lasagne-2cdce6837315
+
+\bibitem{l13}
+ http://www.iti.fh-flensburg.de/lang/algorithmen/sortieren/networks/nulleinsen.htm
+
+\bibitem{l14}
+ http://www.cs.tau.ac.il/~zwick/Adv-Alg-2015/Sorting-Networks.pdf
+
+\bibitem{valsalam2013}    
+ Valsalam, Vinod K. and Miikkulainen, Risto
+ \newblock Using Symmetry and Evolutionary Search to Minimize Sorting Networks
+ \newblock \emph{J. Mach. Learn. Res.}, 14\penalty0 (1): \penalty0 303--331, feb 2013
+
+\bibitem{knuth1998}
+ D. E. Knuth. Art of Computer Programming: Sorting and Searching, volumul 3, capitolul 5, paginile
+ 219–229. Addison-Wesley Professional, 2 edition, April 1998
+
+\bibitem{green1972}
+ M. W. Green. Some improvements in non-adaptive sorting algorithms. In Proceedings of the Sixth
+ Annual Princeton Conference on Information Sciences and Systems, paginile 387–391, 1972.
+
+\bibitem{rubix}
+ Stephen McAleer, Forest Agostinelli, Alexander Shmakov, Pierre Baldi
+ Solving the Rubik's Cube Without Human Knowledge, 18 Mai 2018
+
+\bibitem{graves_ntm}
+ Alex Graves, Greg Wayne, Ivo Danihelka
+ Neural Turing Machines, 20 Oct 2014
+ 
+\bibitem{gpu}
+ \newblock Peter Kipfer, Rüdiger Westermann
+ \newblock Improved GPU Sorting,
+ \newblock $https://developer.nvidia.com/gpugems/GPUGems2/gpugems2\_chapter46.html$, Aprilie 2005
+ 
+
+
+\end{thebibliography}
 
 \end{document}
