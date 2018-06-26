@@ -106,13 +106,64 @@ Proiectul inglobeaza 2 modele antrenate pe seturi de antrenament diferite, bazat
 \section{Descrierea solutiei}
 Solutia problemei consta intr-un model antrenat pe un set de date produs de un algoritm imperativ de generare a retelelor de tip bubble sorting network si insertion sorting network. Peste modele generate avem o interfata web se permite vizualizarea in browser a retelei generate.
 
-Arhitectura proiectului este:
+\subsection{Arhitectura proiectului}
+
+Proiectul complet este compus din 4 componente:
+\begin{itemize}
+	\item Un server web, bazat pe SpringBoot. Rolul serverului web este sa-i livreze utilizatorului codul interfetei web a aplicatiei. De asemenea mediaza requesturile dintre requesturile unui utilizator de a primi comparatorii pentru un anumit numar de fire si \textit{model manager}. 
+	\item O interfata in browser. Rolul interfetei in browser este acela de a se putea vizualiza efectiv reteaua generta de un modelul selectat pe un anumit numar de fire. Utilizatorul alege nuamrul de fire si modelul pe baza caruia se genereaza outputul.
+	\item O componenta numita model manager. Managerul este compus dintr-un server TCP/IP, prin care care primeste requesturi de la serverul web. O clasa care proceseaza requestul primit de la serverul web si in functie de parametrii din request cere output de la thread pool-ul care ruleaza modelele.
+	\item Un thread pool, fiecare model antrenat ruleaza intr-un thread separat din acest pool. Aceasta componenta incarca modelul antrenat de pe disc si ruleaza intr-un thread separat functia de predictie. Motivatia acestei abordari este legata de directiile de extindere pe viitor a proiectului.
+\end{itemize}
+
 
 \begin{center}
-\includegraphics[scale=0.8]{architecture}
+\begin{tabular}{cc}
+\includegraphics[scale=0.6]{arch} \\
+Arhitectura generara a proiectului
+\end{tabular}
 \end{center}
 
-Arhitectural, avem un server web care ii trimite clientului codul interfeti grafice folosite la reprezentarea inputului pentru un numar dat de fire. Utilizatorul va alege ca input numarul de fire folosit si se va realiza un request ajax in spate cate serverul web. Serverul se conecteaza printr-un socket la model manager, ce coordoneaza cele doua modele antrenate si va trimite serverului prin socket comparatorii generati, in functie de modelul ales de utilizator. Serverul trmite la client comparatorii, iar clientul creeaza diagrama retelei respective.
+In diagrama de mai sus observam schematic, abstractizat, principalele componenente ale proiectului si relatiile dintre ele. In continuare descriem in detaliu aceste relatii: 
+\begin{itemize}
+	\item \textbf{SpringBoot Server} - \textbf{WebUI}, etapa principala din ciclul de viata al proiectului este livrarea codului interfetei clientului, apoi, de interes este interactiunea dintre \textit{WebUI} si server. De obicei fluxul normal este:
+	\begin{enumerate}
+		\item Utilizatorul selecteaza numarul de fire, modelul antrenat folosit si asteapta producerea rezultatului. In spate, \textit{WebUI} impacheteaza optiunile utilizatorului intr-un pachet \textit{JSON} si trimite prin \textit{AJAX} un request catre server.
+		\item \textit{Serverul} primeste requestul de la \textit{WebUI} printr-un endpoint. In functie de optiunile alese, se creeaza un apel catre clasa \textit{ManagerClient} care are rolul de a fi un adaptor intre server si \textit{ModelManager}. 
+		\item \textit{Server}-ul impacheteaza intr-un \textit{JSON} lista de comparatori returnata de \textit{ManagerClient} si il trimite \textit{WebUI}-ului.
+		\item \textit{WebUI}-ul primeste \textit{response}-ul \textit{AJAX} cu lista de comparatori si initiaza un apel spre modulul de desenare, care creeaza reprezentarea grafica a retelei produse.
+	\end{enumerate}
+	\item \textbf{SpringBoot Server} - \textbf{ModelManager}, comunicarea dintre aceste componente este, de regula, initializata de \textit{ManagerClient} si cronologic este structurata astfel:
+	\begin{enumerate}
+		\item \textit{ManagerClient}-ul initiaza o conexiune TCP/IP cu \textit{ModelManager}-ul. Ii trimite acestuia un pachet codificat intr-un protocol propriu ce contine numarul de fire si modelul pe baza caruia sa se genereze comparatorii.
+		\item \textit{ModelManagerul}-ul accepta conexiunea de la \textit{ManagerClient}, primeste pachetul, il decodifica si realizeaza un apel catre \textit{ModelThreadPool}, apoi impacheteaza lista de comparatori generata si o trimite inapoi la \textit{ManagerClient}. 
+	\end{enumerate}
+	\item \textbf{ModelManager} - \textbf{ModelPool}. De la initializare \textit{ModelPool}-ul incarca de pe disc fiecare dintre modele si porneste un thread separat ce le ruleaza. 
+	\begin{enumerate}
+		\item In functie de modelul ales \textit{ModelManager}-ul realizeaza un apel la metoda respectiva din \textit{ModelPool}.
+		\item Prin intermediul unei cozi \textit{thread-safe}, \textit{ModelPool}, semnalizeaza threadul cu modelul respectiv ca trebuie evaluat un nou rezultat. Rezultatul modelului este transmis inapoi prin acelasi mecanism.
+	\end{enumerate}
+	
+\end{itemize}
+
+
+
+In continuare dorim sa analizam mai atent structura si modul de functionare al \textit{ModelManager}-ului.
+
+\begin{center}
+\begin{tabular}{cc}
+\includegraphics[scale=0.9]{manager_arch} \\
+Arhitectura interna a model managerului
+\end{tabular}
+\end{center}
+
+
+In diagrama de mai sus sunt expuse principalele submodule ale managerului. Expunem succint scopul fiecarui submodul:
+\begin{itemize}
+	\item \textit{ModelApi}, reprezinta un server TCP/IP ce ruleaza pe portul \textit{2018}. Comunicarea cu componenta de \textit{ModelManager} se face prin trimiterea de TCP/IP pe acest port.
+	\item \textit{ModelProcessor}, decodifica pachetele primite de eventualii utilizatori apeleaza metoda potrivita din urmaorul submodul. \textit{ModelProcessor}-ul are si rolul de a aproxima probabilitatile din lista de comparatori generata de model.
+	\item \textit{ModelThreadPool}, incarca de pe disc fiecare dintre modelele salvate si apoi creeaza un thread in care ruleaza fiecare model. Comunicarea dintre threadul principal se face prin intermediul a doua cozi \textit{thread-safe}. Threadul principal pune un coada numarul de fire dorit, iar threadul ce ruleaza modelul respectiv pune in a doua coada lista de comparatori generarata. 
+\end{itemize}
 
 \subsection{Arhitectura modelului}
 
@@ -450,6 +501,8 @@ RaphaelJS reprezinta biblioteca de javascript folosita pentru desenarea in brows
 Twitter Bootstrap este un framework web pentru componenta de frontend. Se pun la dispozitie mai multe clase CSS pentru crearea de componente vizuale precum butoane, bare de meniu, cat si un mecanism specific de de pozitionare a continutului.
 
 Motivul pentru care am introdus si aceasta dependinta in stiva de tehnologii folosita in proiect si nu am creat toata interfata in RaphaelJS este performanta. Desenarea intregului design si implementarea si mecanicilor din spate (precum gestionarea apasarilor de buton) ar fi fost remarcabil mai lenta.
+
+\pagebreak
 
 \section{Concluzii}
 
