@@ -1,0 +1,105 @@
+<html>
+    <head>
+        <title>
+            foo
+        </title>
+        <!-- externalize the css -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.js">
+        </script>
+
+        <script
+            src="https://code.jquery.com/jquery-2.2.4.min.js"
+            integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+            crossorigin="anonymous">
+        </script>
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    </head>
+
+    <body>
+
+        <div id="network_area">
+            <center>
+                <div id="network_core" width="400px" height="300px">
+
+                    <!-- The prototype network size should scale -->
+                    <table id="network_prototype" border="solid" width="600px" height="300px">
+                        <tr>
+                            <td id="draw_area_core">
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </center>
+
+            <div id="network_controls">
+
+                <div id="network_misc">
+                    <label for="num_wires">
+                        Prototype network, num wires: 
+                    </label>
+                    <input type="text" name="num wires" id="num_wires"/>
+                </div>
+
+                <div id="network_buttons">
+                    <button type="button" id="generate" class="btn btn-lg btn-primary">
+                        Live input sort
+                    </button>
+        
+                    <button type="button" id="chose_another_model" data-toggle="modal" data-target="#myModal" class="btn btn-lg btn-primary">
+                        Choose another model
+                    </button>
+        
+                    <button type="button" id="reset_num_wires" class="btn btn-lg btn-primary">
+                        Reset number of wires
+                    </button>
+                </div>
+
+            </div>
+            </center>
+
+        </div>
+
+        <script type="text/javascript" src="main.js"> </script>   
+        <script type="text/javascript" src="handlers.js"> </script>
+        <script type="text/javascript"> 
+            main();
+        </script>
+
+
+        <div class="container">
+            <!-- Trigger the modal with a button -->
+            <!--<button type="button" class="btn btn-info btn-lg" >Open Modal</button>-->
+
+            <!-- Modal -->
+            <div class="modal fade" id="myModal" role="dialog">
+                <div class="modal-dialog">
+
+                    <!-- Modal content-->
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h4 class="modal-title">Modal Header</h4>
+                        </div>
+                        <div class="modal-body">
+                            <button type="button" class="btn btn-lg btn-primary">
+                                Bubble sorter model
+                            </button>
+
+                            <button type="button" class="btn btn-lg btn-primary">
+                                Insertion sorter model
+                            </button>
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
