@@ -215,6 +215,45 @@ Datele de antrenament sunt procesate de retea in batchuri de 1.
 
 Structura inputului retelei este de un vector de 9 elemente ce reprezinta codificarea in binar a numarului de fire din retea. Outputul retelei este un vector tridimensional cu $2*numar\_comparatori$ elemente. Elementele din vector sunt semantic grupate 2 cate 2, codificate ca un sir de biti, si reprezinta pozitiile comparatorilor din retea. 
 
+\subsection{Codul modelului}
+
+\begin{figure}
+\centering
+\begin{lstlisting}
+def model(input_var, batch_size=1, size=8, num_units=100, memory_shape=(1024, 160)):
+
+    l_input = InputLayer((batch_size, None, size + 1), input_var=input_var)
+    _, seqlen, _ = l_input.input_var.shape
+
+    memory = Memory(memory_shape, name='memory', 
+    	memory_init=lasagne.init.Constant(1e-6), learn_init=False)
+    controller = GRUController(l_input, memory_shape=memory_shape,
+        num_units=num_units, num_reads=1,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        name='controller')
+    heads = [
+        WriteHead(controller, num_shifts=3, memory_shape=memory_shape, 
+        	name='write', learn_init=False,
+            nonlinearity_key=lasagne.nonlinearities.rectify,
+            nonlinearity_add=lasagne.nonlinearities.rectify),
+        ReadHead(controller, num_shifts=3, memory_shape=memory_shape, 
+        	name='read', learn_init=False,
+            nonlinearity_key=lasagne.nonlinearities.rectify)
+    ]
+    l_ntm = NTMLayer(l_input, memory=memory, controller=controller, heads=heads)
+
+    l_output_reshape = ReshapeLayer(l_ntm, (-1, num_units))
+    l_output_dense = DenseLayer(l_output_reshape, num_units=size + 1, 
+    	nonlinearity=lasagne.nonlinearities.sigmoid, \
+        name='dense')
+    l_output = ReshapeLayer(l_output_dense, (batch_size, seqlen, size + 1))
+
+    return l_output, l_ntm
+
+\end{lstlisting}
+\caption{Sursa modelului}
+\end{figure}
+
 \subsection{Antrenarea modelului}
 
 Modelul ce genereaza retele bubble sorter a fost antrenat pe un set de input 1000 de elemente, pe numere mai mari de atat timpul necesar finalizarii procesului de antrenament devine foarte mare. Datele din setul de antrenament au fost generate conform algoritmului:
@@ -229,6 +268,8 @@ Modelul ce genereaza retele bubble sorter a fost antrenat pe un set de input 100
         ret_val += self.dummy_sorter(n - 1)
         return ret_val
 \end{lstlisting}
+
+
 
 si arata astfel pentru un set de antrenament de 5 elemente:
 
@@ -319,6 +360,9 @@ reprezinta dimensiunea 3, adica reteau va trebui sa genereze setul de comparator
 \end{multicols}
 \end{center}
 
+-- extinde in sectiune cu `Rezultate Obtinute`
+-- adauga schema retelelor obtinute, perechile input-output pentru 3 sample-uri de outputuri
+ 
 Semnificatia fiecarui double din lista este probabilitatea ca bitul respectiv sa fie 1. Acuratetea probabilitatilor se sporeste cu antrenarea sporita a modelului. Intr-un final, se grupeaza 2 cate 2 elementele din lista si se decodifica din binar in decimal.
 
 \subsection{Prezentarea interfetei}
@@ -357,7 +401,7 @@ Motivati de aceste aplicatii in practice, retelele de sortare sunt un subiect im
 \end{figure}
 \end{center}
 
-Pana in 2013, se cunosteau retele de sortare minimale doar pentru inputuri $n \leq 8$ (vezi Tabelul 1). In 2013, Valsalam a introdus un articol in care prezinta modalitati de generare a retelelor optimale prin algoritmi evolutivi si reuseste sa obtina noi rezultate pentru $n$ de marime $17 \ , 18, \ , 19 \, 20, \ , 21$ si $22$.
+Pana in 2013, se cunosteau retele de sortare minimale doar pentru inputuri $n \leq 8$ (vezi Tabelul 1). In 2013, Valsalam a introdus un articol in care prezinta modalitati de generare a retelelor optimale prin algoritmi evolutivi si reuseste sa obtina noi rezultate pentru $n$ de marime $17 \ , 18, \  19, \ 20, \ , 21$ si $22$. In continuare, gasirea de retele optimale pentru inputuri $n > 8$ ramane o problema deschisa. Un caz particualr de interes este reprezentat de retelele descoperite de Green.
 
 \begin{figure}
 \centering
@@ -371,28 +415,6 @@ Pana in 2013, se cunosteau retele de sortare minimale doar pentru inputuri $n \l
 \caption{Numarul minim de comparatori cunoscut pentru retele de sortare de dimensiune $n \leq 16$. Aceste retele au fost studiate intens, dar s-a dovedit ca doar rezultatele pentru $ n \leq 8$ sunt minimale.}
 
 \end{figure}
-
-
-
-\subsection{Generarea retelelor de sortare folosind algoritmi evolutivi}
-
--- descrierea succinta a abordarii prin algoritmi evolutivi
-
-\subsection{Retelele optimale}
-
-\subsubsection{Prezentare}
-In aceasta sectiune a lucrarii dorim sa amintim despre \textit{retelele lui Green}, intrucat folosind metoda lui \textit{Green} de construire a retelelor obtinem numarul minimal de comparatori.
-
-Mai jos afisam rezultatul metodei lui \textit{Green} pentru o retea de marime $16$:
-
-\begin{figure}
-\centering
-\includegraphics[scale=1.0]{green_net}
-\\
-\caption{Reteaua de comparatori a lui green pentru un input $n = 16$}
-\end{figure}
-
-Acesta retea are $60$ de comparatori, care reprezinta cea mai mica valoare cunoscuta pentru o retea cu 16 inputuri[16][17]. Comparatorii dintr-o astfel de retea sunt simetric aranjati de la axa orizontala pana in mijlocul retelei. Acest tip de retele au reprezentat pentru unii cercetatorii obiectiv de studiu pentru dezvoltarea algoritmilor evolutivi care genereaza retele de sortare. 
 
 \subsection{Principiul 0-1}
 
@@ -411,6 +433,55 @@ Acesta retea are $60$ de comparatori, care reprezinta cea mai mica valoare cunos
 Sa presupunem ca o \textit{retea} nu este retea de sortare. Atunci, va mapa valorile $x_1$, $x_2$,...,$x_n$ arbitrare, la $y_1$, $y_2$,..., $y_n$. Unde $y_i > y_{i+1}$ pentru $1 \leq i  < n$. Presupunem $f(x) = 1$ daca si numai daca $x \geq y_i$, $0$ altfel. Reteaua va mapa $f(x_1)$, $f(x_2)$,..., $f(x_n)$ la $f(y_1)$, ..., $f(y_i)=1$, $f(y_{i+1})=0$, ..., $f(y_n)$. Astfel, reteaua nu va sorta toate inputurile de tipul $0-1$.
 
 
+
+\subsection{Generarea retelelor de sortare folosind algoritmi evolutivi}
+
+In acest subcapitol descriem succint modalitatea de generare a retelelor de sortare optimale folosind algorimti evolutivi. Motivul pentru care am ales sa aducem in lumina si aceasta abordare este ca, proflema fiind una dificila de rezolvat prin metode imperative, s-a incercat abordarea acesteia prin metode evolutive, iar rezultatele sunt surprinzatoare.
+
+In principal, vom descrie metoda introdusa de \textit{Valsalam} si \textit{Miikkulainen}, (SENSO[15]). 
+
+\subsubsection{Reprezentarea functiilor booleane}
+
+Folosind principiul \textit{0-1} descris mai sus, putem exprima inputul unei retele de sortare ca variabile booleane, iar outputul retelei ca functii de aceste variabile. Astfel, problema gasirii comparatorilor pentru o retea de sortare se reduce la a numara firele ce au ca input valoarea $1$ si a seta outputul firelor de output \textit{de mai jos} la valoarea $1$, iar outputul firelor ramase la $0$. Deoarece aceste functii sunt implementate de comparatorii din retea, problema gasirii unei retele de sortare se poate reduce la problema gasirii unei secvente de comparatori care ii genereaza functiile de output.
+
+\subsubsection{Simetrii in retele de sortare}
+O simetrie intr-o retea de sortare este o operatie pe setul de functii de output al retelei care nu afecteaza outputul retelei. Valsalam defineste formal operatie de simetrie  $\sigma_i$ pentru $1 \leq i \leq \mid\frac{n}{2}|$ care opereaza pe setul de functii de output din retea prin interschimbarea functiei $f_i$ si dualei $f_{n+1-i}$, interschimband conjunctia si disjuctia dintre ele. Compozitia simetriilor este tot o simetrie, fiind inchisa la compozitie. 
+\subsubsection{Minimizarea numarului de comparatori necesari}
+
+-- to do
+
+\subsubsection{Evoluarea retelelor minimale}
+
+Valsalam initializeaza evolutia cu o populatie de solutii produse de algoritmul greedy. Valoarea de \textit{fitness} a fiecarei solutii este $-1 \  \cdot $ \texttt{numarul de comparatori}, pentru ca imbunatatirea \textit{fitness}-ului sa rezulte intr-un numar mai mic de comparatori generati. La fiecare noua generatie, selectia se face prin metoda \textit{turneu} pe baza valorii de \textit{fitness} pentru a selecta indivizii din populatie pentru reproducere. La reproducere se muteaza reteaua parinte si se creeaza o retea de \textit{offspring} in doi pasi:
+\begin{enumerate}
+	\item Un comparator este ales in mod aleator din retea si apoi se trunchiaza reteaua dupa el, eliminand comparatorii ce urmeaza dupa el.
+	\item Algoritmul greedy este folosit pentru a adauga noi comparatori construind o noua retea. Pentru ca algoritmul greedy alege un comparator cu cea mai mare utilitate in mod aleator, aceasta mutatie exploreaza o noua combinatie de comparatori ce ar putea fi mult mai folositori decat comparatorul parinte.
+\end{enumerate}
+Aceasta abordare restrange spatiul de cautare la comparatorii generati de algorimtul greedy.
+SENSO[15] a fost rulat pe o populatie de marime 200 pentru 500 de generatii ca sa evolueze de retele de sortare optimale. La fiecare generatie, au selectate cele 100 de retele cu numarul minimal de comparatori pentru a estima modelul. Acelasi set de retele a fost copiat la urmatoarea generatie, fara modificari, ....
+
+Experimentul de mai sus a fost repetat de $20$ de ori pentru fiecare varianta a algoritmului greedy si pentru fiecare input $n \leq 23$
+
+Numarul de comparatori gasit de SENSO in corespondenta cu marimea reteli este reprezentat in figura de mai jos.
+
+
+
+\subsection{Retelele optimale}
+
+\subsubsection{Prezentare}
+In aceasta sectiune a lucrarii dorim sa amintim despre \textit{retelele lui Green}, intrucat folosind metoda lui \textit{Green} de construire a retelelor obtinem numarul minimal de comparatori.
+
+Mai jos afisam rezultatul metodei lui \textit{Green} pentru o retea de marime $16$:
+
+\begin{figure}
+\centering
+\includegraphics[scale=1.0]{green_net}
+\\
+\caption{Reteaua de comparatori a lui green pentru un input $n = 16$}
+\end{figure}
+
+Acesta retea are $60$ de comparatori, care reprezinta cea mai mica valoare cunoscuta pentru o retea cu 16 inputuri[16][17]. Comparatorii dintr-o astfel de retea sunt simetric aranjati de la axa orizontala pana in mijlocul retelei. Acest tip de retele au reprezentat pentru unii cercetatorii obiectiv de studiu pentru dezvoltarea algoritmilor evolutivi care genereaza retele de sortare. 
+
 \subsection{Metode imperative de generare a retelelor de sortare}
 
 Exista mai multe metode imperative pentru a genera o retea de sortare. Cele mai usoare modalitati sunt de a generea o 
@@ -421,7 +492,9 @@ In cazul unei insertion sorting network, o retea bazata pe insertion sort proces
 intre firul $0$ si $1$. Se creeaza un comparator intre $0$ si $1$, $2$. Pana cand se ajunge la pasul in care se generaza un comparator intre $0$ si $1$, ..., $n-1$ si $n$. 
 
 Un exemplu de bubble sorting network:
-\begin{center}
+
+\begin{figure}
+\centering
 \begin{tikzpicture}
 %\fill [gray!15] (1.5,1.5) -- (2.5,1.5) -- (2.5,2.5) -- (1.5,2.5) -- cycle;
 \foreach \a in {1,...,4}
@@ -434,13 +507,14 @@ Un exemplu de bubble sorting network:
 \draw[thick] (4,4) -- (4,3);
 \draw[thick] (5,3) -- (5,2);
 \draw[thick] (6,4) -- (6,3);
-
 \end{tikzpicture}
-\end{center}
+\caption{Retea de sortata generata pe baza algoritmului \textit{Bubble Sort} cu $n=4$ inputuri. }
+\end{figure}
 
 Un exemplu de insertion sorting network:
 
-\begin{center}
+\begin{figure}
+\centering
 \begin{tikzpicture}
 %\fill [gray!15] (1.5,1.5) -- (2.5,1.5) -- (2.5,2.5) -- (1.5,2.5) -- cycle;
 \foreach \a in {1,...,4}
@@ -453,9 +527,9 @@ Un exemplu de insertion sorting network:
 \draw[thick] (4,2) -- (4,1);
 \draw[thick] (5,3) -- (5,2);
 \draw[thick] (6,4) -- (6,3);
-
 \end{tikzpicture}
-\end{center}
+\caption{Retea de sortare generata pe baza algoritmului \textit{Insertion Sort} pentru $n=4$ inputuri.}
+\end{figure}
 
 Algoritmul imperativ pe care l-am folosit pentru a genera un bubble sorting network este:
 \begin{lstlisting}
