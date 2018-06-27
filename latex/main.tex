@@ -13,6 +13,44 @@
 \usepackage{amsfonts}
 \usepackage{sectsty}
 \usepackage{multicol}
+\usepackage[margin=1cm]{caption}
+\usepackage{tabu}
+\usepackage{array}
+\usepackage[trim]{tokenizer} 
+
+\newcounter{sncolumncounter}
+\newcounter{snrowcounter}
+
+\def \nodelabel#1{%
+\setcounter{snrowcounter}{1}
+ \foreach \i in {#1}{%
+   \draw (\value{sncolumncounter},\value{snrowcounter}) node[anchor=south]{\i};
+   \addtocounter{snrowcounter}{1}
+ }
+ \addtocounter{sncolumncounter}{1}
+}
+
+\def \nodeconnection#1{%
+  \foreach \i in {#1}{%
+    \GetTokens{nodesrc}{nodedest}{\i}
+    \draw (\value{sncolumncounter},\nodesrc) node[circle,fill=black]{}--(\value{sncolumncounter},\nodedest) node[circle,fill=black]{};
+  }
+  \addtocounter{sncolumncounter}{1}
+}
+ 
+\newenvironment{sortingnetwork}[3]
+{
+  \setcounter{sncolumncounter}{0}
+  \def \sn@fullsize{15}
+  \begin{tikzpicture}[scale=#3*\sn@fullsize/10]
+  \foreach \i in {1, ..., #1}
+  {
+    \draw (0,\i)--(7-1,\i);
+  }
+}
+{
+  \end{tikzpicture}
+}
 
 
 \lstset{
@@ -74,10 +112,11 @@ UNIVERSITATEA "ALEXANDRU IOAN CUZA" DIN IAȘI
 \end{center}
 \end{titlepage} 
 
+\definecolor{light-gray}{gray}{0.95}
 \renewcommand{\refname}{Bibliografie}  % for the article class
 \renewcommand{\contentsname}{Cuprins}
-
-
+\renewcommand{\figurename}{Fig.}
+\newcommand{\code}[1]{\colorbox{light-gray}{\texttt{#1}}}
 
 \begin{abstract}
 
@@ -282,7 +321,10 @@ reprezinta dimensiunea 3, adica reteau va trebui sa genereze setul de comparator
 
 Semnificatia fiecarui double din lista este probabilitatea ca bitul respectiv sa fie 1. Acuratetea probabilitatilor se sporeste cu antrenarea sporita a modelului. Intr-un final, se grupeaza 2 cate 2 elementele din lista si se decodifica din binar in decimal.
 
+\subsection{Prezentarea interfetei}
 
+-- pune 1-2-3 screenshoturi
+-- vorbeste foarte succint despre fiecare optiune pe care o are utilizatorul
 
 \section{Retele de sortare}
 
@@ -290,23 +332,51 @@ In cadrul acestui capitol prezentam acestui capitol prezentam fundamentele teore
 
 \subsection{Prezentare}
 
-\noindent Formal, definim o retea de sortare de dimensiune $N$ ca fiind o colectie de $N$ fire si $M$ comparatori. Comparatorii \noindent au rolul de a interschimba doua elemente aflate pe fire diferite, elementele trebuie sa satisfaca un predicat $P$ \noindent astfel incat la finalul aplicarii secventei de comparatori pe elementele aflate in retea sa obtinem o secventa aflata in ordine.
+O retea de sortare cu $n$ inputuri este o secventa fixa de comparatii si interschimbari (comparatori) ce sorteaza toate inputurile de marime $n$. Deoarece aceeasi secventa de comparatori sorteaza orice secventa de marime $n$, reprezinta un algoritm de sortare independent de date. Asta inseamna ca secventa de comparatii ce se executa nu depinde de inputul primit. Datorita structurii pe care o are o retea de sortare, sunt de preferat in implementarile paralele ale algoritmilor de sortare, precum cele de pe placile grafice.
 
-\noindent Schematic, ilustram o retea de sortare cu 4 fire astfel: \break
+Motivati de aceste aplicatii in practice, retelele de sortare sunt un subiect important de cercetare inca din 1950. Un interes deosebit il au retelele de sortare optimale, care folosesc numarul minim posibil de comparatori. Generarea retelelor de sortare optimale reprezinta o problema grea de optimizare, investigata pentru prima data de O'Connor si Nelson pentri $4 \leq n \leq 8$. Retelele gasite de cei 2 aveau numarul minim de comparatori pentru $4, 5, 6$ si $8$ inputuri, dara veau nevoie de 2 comparatori in plus pentru $7$ inputuri. Acest rezultata a fost imbunatatit in 1968 de Batcher care a gasit retele minimale pentru $n \leq 8$.
+
 \begin{center}
-\begin{tikzpicture}
-%\fill [gray!15] (1.5,1.5) -- (2.5,1.5) -- (2.5,2.5) -- (1.5,2.5) -- cycle;
-\foreach \a in {1,...,4}
-  \draw[thick] (0,\a) -- ++(5,0);
-\foreach \x in {{1,2},{1,4},{2,1},{2,3},{3,1},{3,2},{3,3},{3,4},{4,2},{4,3}}
-  \filldraw (\x) circle (1.5pt);
-\draw[thick] (1,4) -- (1,2);
-\draw[thick] (2,1) -- (2,3);
-\draw[thick] (3,1) -- (3,2);
-\draw[thick] (3,3) -- (3,4);
-\draw[thick] (4,2) -- (4,3);
-\end{tikzpicture}
+\begin{figure}
+
+\centering
+
+\begin{sortingnetwork}{4}{5}{1}
+\nodelabel{$x_4$, $x_3$, $x_2$, $x_1$}
+\nodeconnection{{1,2}}
+\nodeconnection{{3,4}}
+\nodeconnection{{1,3}}
+\nodeconnection{{2,4}}
+\nodeconnection{{2,3}}
+\nodelabel{$y_4$, $y_3$, $y_2$, $y_1$}
+\end{sortingnetwork}
+\\
+\label{Figura 1}
+\caption{O retea de sortare cu 4 inputuri. Valorile de input ${x_1, \ , x_2, \ , x_3, \ , x_4}$ din partea stanga a liniilor orizontale trec printr-o secventa de operatii de comparatii si interschimbari, reprezentate prin linii verticale ce conecteaza perechi de linii orizontale. Fiecare comparator de acest fel isi sorteaza cele doua valori de input, rezultand intr-un final in liniile orizontale ce contin valorile sortate de output ${y_1 \leq y_2 \leq y_3 \leq y_4}$, Aceasta este o retea minimala din punct de vedere a numarului de comparatori folositi.}
+
+\end{figure}
 \end{center}
+
+Pana in 2013, se cunosteau retele de sortare minimale doar pentru inputuri $n \leq 8$ (vezi Tabelul 1). In 2013, Valsalam a introdus un articol in care prezinta modalitati de generare a retelelor optimale prin algoritmi evolutivi si reuseste sa obtina noi rezultate pentru $n$ de marime $17 \ , 18, \ , 19 \, 20, \ , 21$ si $22$.
+
+\begin{figure}
+\centering
+\begin{tabu} to 1.1 \textwidth { | X[0] | X[1] | X[2] |  X[3] | X[4] | X[5] | X[6] | X[7] | X[8] | X[9] | X[10] | X[11] | X[12] | X[13] | X[14] | X[15] | X[16] |}
+ \hline
+ n & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 & 16\\
+ \hline
+ C  & 0 & 1 & 3 & 5 & 9 & 12 & 16 & 19 & 25 & 29 & 35 & 39 & 45 & 51 & 56 & 60\\
+\hline
+\end{tabu}
+\caption{Numarul minim de comparatori cunoscut pentru retele de sortare de dimensiune $n \leq 16$. Aceste retele au fost studiate intens, dar s-a dovedit ca doar rezultatele pentru $ n \leq 8$ sunt minimale.}
+
+\end{figure}
+
+
+
+\subsection{Generarea retelelor de sortare folosind algoritmi evolutivi}
+
+-- descrierea succinta a abordarii prin algoritmi evolutivi
 
 \subsection{Retelele optimale}
 
@@ -314,9 +384,14 @@ In cadrul acestui capitol prezentam acestui capitol prezentam fundamentele teore
 In aceasta sectiune a lucrarii dorim sa amintim despre \textit{retelele lui Green}, intrucat folosind metoda lui \textit{Green} de construire a retelelor obtinem numarul minimal de comparatori.
 
 Mai jos afisam rezultatul metodei lui \textit{Green} pentru o retea de marime $16$:
-\begin{center}
+
+\begin{figure}
+\centering
 \includegraphics[scale=1.0]{green_net}
-\end{center}
+\\
+\caption{Reteaua de comparatori a lui green pentru un input $n = 16$}
+\end{figure}
+
 Acesta retea are $60$ de comparatori, care reprezinta cea mai mica valoare cunoscuta pentru o retea cu 16 inputuri[16][17]. Comparatorii dintr-o astfel de retea sunt simetric aranjati de la axa orizontala pana in mijlocul retelei. Acest tip de retele au reprezentat pentru unii cercetatorii obiectiv de studiu pentru dezvoltarea algoritmilor evolutivi care genereaza retele de sortare. 
 
 \subsection{Principiul 0-1}
@@ -401,8 +476,6 @@ Pentru un numar de fire dat, $n$, generam lista de comparatori, adica conexiunil
 $O(n^2)$. Retelele optimale si cele mai des folosite in practica sunt bazate pe algoritmul bitonic sort, acestea ating complexitate de $O(nlog^2(n))$. Insa motivul pentru care am prezentat bubble sorting network si insertion sorting network este
 ca bazandu-ne pe acesti algoritmi am generat datele de antrenament pentru modelul dezvoltat. Motivatia ar fi ca, cel putin din experimentele realizate in cadrul acestui proiect, este mai usor de antrenat un model care sa produca date relevante atunci cand primeste date de antrenament generate pe baza acestor algoritmi.
 
-\subsection{Generarea retelelor de sortare folosind algoritmi evolutivi}
-
 \subsection{Aplicatii}
 Cea mai la indemana aplicatie in practica a retelelor de sortare o reprezinta sortarea pe placile grafice. Placile grafice dispozitive orientate puternic spre paralelizarea instructiunilor, pe arhitectura \textit{single-instruction, multiple data (SIMD}. Si avand in vedere si ca placile grafice depasesc in performanta CPU-ul cand vine vorba de algoritmi cu limita de memorie si timp de calcul, retelele de sortare devin o optiune eficienta.
 
@@ -433,9 +506,17 @@ Legatura dintre inteligenta artificiala si teoria computatiei in 1940. Modelul i
 
 Un exemplu de NTM desfasurat in timp:
 
-\begin{center}
+
+\begin{figure}
+\centering
 \includegraphics[scale=0.2]{ntm}
-\end{center}
+\\
+\caption{Arhitectura unui Neural Turing Machine. Sursa: \texttt{https://medium.com/snips-ai/
+ntm-lasagne-a-library-for-neural-turing-machines
+-in-lasagne-2cdce6837315}}
+\end{figure}
+
+-- adauga descriere exhaustiva la diagarama
 
 Componenta de controller din cadrul unui Neural Turing Machine este o retea neuronala care pune la dispozitie reprezentarea interna a inputului care este folosit de capetele de scriere si citire ca sa poate interactiona cu memoria. Reprezentarea aceasta nu este identica cu cea stocata in memorie. Tipul de controler pe care il alegem reprezinta cea mai semnificativa alegere arhitecturala. Controllerul poate fi fie o retea feed-forward, fie o retea recurenta.
 
@@ -443,11 +524,20 @@ Capetele de scriere si citire sunt singurele componente din cadrul unui Neural T
 
 Reprezentare vizuala a notiunilor descrise mai sus:
 
-\begin{center}
+\begin{figure}
+\centering
 \includegraphics[scale=0.3]{rw_head}
-\end{center}
+\\
+\caption{Arhitectura capului de scriere/citire a unui \textit{Neural Turing Machine}. Sursa: \texttt{https://medium.com/snips-ai/
+ntm-lasagne-a-library-for-neural-turing-machines
+-in-lasagne-2cdce6837315}}
+\end{figure}
 
 \subsubsection{Aplicatii}
+
+-- descriere aplicatii algortimi paraleli de sortare
+-- utilizare pe GPU
+-- utilizare pe CPU
 
 \section{Tehnologii folosite}
 
