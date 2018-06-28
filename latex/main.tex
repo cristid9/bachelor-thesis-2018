@@ -78,15 +78,18 @@
 
 \begin{document}
 
-\afterpage{\blankpage}
-
 \begin{titlepage}
 
 \begin{center}
 
-UNIVERSITATEA "ALEXANDRU IOAN CUZA" DIN IAȘI
+UNIVERSITATEA "ALEXANDRU IOAN CUZA" DIN IASI
 \\
-\textbf{Facultatea de Informatica din Iasi}
+\textbf{FACULTATEA DE INFORMATICA}
+\\
+\begin{center}
+\includegraphics[scale=0.7]{fii}
+\end{center}
+
 \end{center}
 
    \vspace{20mm}
@@ -99,7 +102,7 @@ UNIVERSITATEA "ALEXANDRU IOAN CUZA" DIN IAȘI
 	
 	\vspace{10mm}
 	
-	\large \textbf{CREARE RETELELOR DE SORTARE FOLOSIND DEEPLEARNING}\\
+	\large \textbf{CREAREA RETELELOR DE SORTARE FOLOSIND DEEPLEARNING}\\
 	\vspace{5mm}
 		
 	\vspace{5mm}
@@ -112,13 +115,54 @@ UNIVERSITATEA "ALEXANDRU IOAN CUZA" DIN IAȘI
 	\textbf{\textit{Lect. Dr. Frasinaru Cristian}}
 	\vspace{30mm}
 \end{center}
+
+
+\afterpage{\blankpage}
+\begin{center}
+
+UNIVERSITATEA "ALEXANDRU IOAN CUZA" DIN IASI
+\\
+\textbf{FACULTATEA DE INFORMATICA}
+\\
+\begin{center}
+\end{center}
+
+\end{center}
+
+   \vspace{20mm}
+
+\begin{center}
+    \end{center}
+   \vspace{10mm}
+\begin{center}
+	\Large{LUCRARE DE LICENTA}\\
+	
+	\vspace{10mm}
+	
+	\large \textbf{CREAREA RETELELOR DE SORTARE FOLOSIND DEEPLEARNING}\\
+	\vspace{5mm}
+		
+	\vspace{5mm}
+	\large\textit {DANILA MARIUS CRISTIAN}
+	\\
+	\vspace{20mm}
+	\textbf{Data: }\textit{Iulie, 2018}\\
+	\vspace{10mm}
+	\textbf{Coordonator}\\
+	\textbf{\textit{Lect. Dr. Frasinaru Cristian}}
+	\vspace{30mm}
+	\pagebreak
+\end{center}
 \end{titlepage} 
+
+
 
 \definecolor{light-gray}{gray}{0.95}
 \renewcommand{\refname}{Bibliografie}  % for the article class
 \renewcommand{\contentsname}{Cuprins}
 \renewcommand{\figurename}{Fig.}
 \newcommand{\code}[1]{\colorbox{light-gray}{\texttt{#1}}}
+
 
 \begin{abstract}
 
@@ -292,7 +336,8 @@ Mai precis:
 	\item \textbf{Setul de antrenament} este de forma $(x, Y)$ unde $x$ este un numar intreg, iar 
 	$Y=((a_1, b_1), (a_2, b_2), ..., (a_n, bn))$, unde $a_i, b_i$ sunt numere intregi.
 	\item \textbf{Outputul retelei} este de forma:
-	$$Out=(\underbrace{a_1, b_1}_{\text{C1}}, \underbrace{a_2, b_2}_{\text{C2}},\ \ \  ..., \ \ \  \underbrace{a_n, b_n}_{\text{Cn}})$$.
+	$$Out=(\underbrace{a_1, b_1}_{\text{C1}}, \underbrace{a_2, b_2}_{\text{C2}},\ \ \  ..., \ \ \ c
+	 \underbrace{a_n, b_n}_{\text{Cn}})$$.
 	Unde $a_i$ reprezinta firul superior pe care va fi amplasat comparatorul $C_i$, iar $b_i$ reprezinta firul inferior. 
 \end{enumerate}
 
