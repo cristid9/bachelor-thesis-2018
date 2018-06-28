@@ -17,6 +17,8 @@
 \usepackage{tabu}
 \usepackage{array}
 \usepackage[trim]{tokenizer} 
+\usepackage{amsmath}% http://ctan.org/pkg/amsmath
+
 
 \newcounter{sncolumncounter}
 \newcounter{snrowcounter}
@@ -133,17 +135,17 @@ Desi exista abordari neimperative functionale, care genereaza rezultate intr-un 
 
 \section{Introducere}
 
-O retea de sortare reprezinta un model abstract din informatica, compus din fire si comparatori. Scopul comparatorilor este de a interschimba 2 numere de pe firele pe care sunt plasati. Desi sunt modele simple, retelele de sortare au aplicatii numeroase in calculul paralel si sunt folosite la sortarea seturilor de numere in cadrul placilor grafice.
+O retea de sortare reprezinta un model abstract din informatica, compus din fire si comparatori. Scopul comparatorilor este de a interschimba 2 numere de pe firele pe care sunt plasati asa in cat la finalul parcurgerii seriei de comparatori, outputul reteli se va afla in ordine sortata. Desi sunt modele simple, retelele de sortare au aplicatii numeroase in calculul paralel si sunt folosite la sortarea seturilor de numere pe placile grafice.
  
-   In cadrul acestei lucrari mi-am propus sa dezvolt un model capabil sa genereze, pe baza unui numar $N$ de fire primit ca input, lista de comparatori necesari pentru o retea de sortare cu $N$ fire. In cadrul proiectului am dezvoltat si o interfata web ce permite vizualizarea cat si simularea unei sortari pe reteaua obtinuta de model. Cu aceasta ocazie scoatem in lumina si elementul de inovatie al acestei lucrari, si anume ca pana acum nu s-a mai incercat generarea de retele de sortare prin aceasta abordare. In spate, modelul foloseste o arhitectura de retele neuronale introdusa recent (\textit{20 Oct 2014}), optimizata pentru invatarea de algoritmi imperativi. Modelul obtinut produce rezultate pentru retele de dimensiuni mici, de 2, 3 sau 4 fire. Nu produce comparatori pentru retele care sa sorteze complet siruri de numere mai mari de 5 elemente, dar acest lucru lasa loc de extindere a proiectului pe viitor.
+   In cadrul acestei lucrari mi-am propus sa dezvolt un model capabil sa genereze, pe baza unui numar $N$ de fire primit ca input, lista de comparatori necesari pentru o retea de sortare cu $N$ fire. In cadrul proiectului am dezvoltat si o interfata web ce permite vizualizarea cat si simularea unei sortari pe reteaua obtinuta de model. Cu aceasta ocazie scoatem in lumina si elementul de inovatie al acestei lucrari, si anume ca pana acum nu s-a mai incercat generarea de retele de sortare prin aceasta abordare. In spate, modelul foloseste o arhitectura de retele neuronale introdusa recent (in \textit{20 Oct 2014}), optimizata pentru invatarea de algoritmi imperativi. Modelul obtinut produce rezultate pentru retele de dimensiuni mici, de $2$, $3$ sau $4$ fire. Nu produce comparatori pentru retele care sa sorteze complet siruri de numere mai mari de $4$ elemente, dar acest lucru lasa loc de extindere a proiectului pe viitor.
 
 Motivatia din spatele alegerii proiectului de fata este data de viteza de generare ca timp a retelelor de sortare ce este semnificativ mai buna pe retele de dimeniuni mari fata celelalte abordari.
 
-Proiectul inglobeaza 2 modele antrenate pe seturi de antrenament diferite, bazate pe rezultatele a 2 algoritmi imperativi. Acesti 2 algoritmi imperativi au la baza modul de generare a interschimbarilor din algoritmii de sortare \textit{Bubble Sort} si \textit{Insertion Sort}. Fiecare model incearca sa produca rezultatele similare cu unul dintre cei 2 algoritmi imperativi folositi. Cele doua modele sunt rulate de o a doua componenta a proiectului, \textit{model manager}, intr-un thread. Scopul acestei componente este sa centralizeze rezultatele de la cele doua modele si sa comunice cu componenta \textit{backend} din spatele interfetei web. Intr-un final, ultima componenta a proiectului este cea de interfata web care afiseaza retelele produse de cele doua modele.
+Proiectul inglobeaza 2 modele antrenate pe seturi de antrenament diferite, bazate pe rezultatele a 2 algoritmi imperativi. Acesti 2 algoritmi imperativi au la baza modul de generare a interschimbarilor din algoritmii de sortare \textit{Bubble Sort} si \textit{Insertion Sort}. Fiecare model incearca sa produca rezultatele similare cu unul dintre cei 2 algoritmi imperativi folositi. Cele doua modele sunt rulate de o a doua componenta a proiectului, \textit{model manager}, intr-un \textit{thread}\footnote{S-a recurs la aceasta abordare din motive de performanta} separat fiecare model. Scopul acestei componente este sa centralizeze rezultatele de la cele doua modele si sa comunice cu componenta de \textit{backend} din spatele interfetei web. Intr-un final, ultima componenta a proiectului este cea de interfata web care afiseaza retelele produse de cele doua modele.
 
 
 \section{Descrierea solutiei}
-Solutia problemei consta intr-un model antrenat pe un set de date produs de un algoritm imperativ de generare a retelelor de tip bubble sorting network si insertion sorting network. Peste modele generate avem o interfata web se permite vizualizarea in browser a retelei generate.
+Solutia problemei consta intr-un model antrenat pe un set de date produs de un algoritm imperativ de generare a retelelor de tip bubble sorting network si insertion sorting network. Peste modelele generate avem o interfata web ce permite vizualizarea in browser a retelei generate.
 
 \subsection{Arhitectura proiectului}
 
@@ -215,10 +217,10 @@ Datele de antrenament sunt procesate de retea in batchuri de 1.
 
 Structura inputului retelei este de un vector de 9 elemente ce reprezinta codificarea in binar a numarului de fire din retea. Outputul retelei este un vector tridimensional cu $2*numar\_comparatori$ elemente. Elementele din vector sunt semantic grupate 2 cate 2, codificate ca un sir de biti, si reprezinta pozitiile comparatorilor din retea. 
 
-\subsection{Codul modelului}
+\subsection{Sursa modelului}
+Mai jos introducem componenta principala din cadrul proiectului:
 
-\begin{figure}
-\centering
+\begin{center}
 \begin{lstlisting}
 def model(input_var, batch_size=1, size=8, num_units=100, memory_shape=(1024, 160)):
 
@@ -249,10 +251,10 @@ def model(input_var, batch_size=1, size=8, num_units=100, memory_shape=(1024, 16
     l_output = ReshapeLayer(l_output_dense, (batch_size, seqlen, size + 1))
 
     return l_output, l_ntm
-
 \end{lstlisting}
-\caption{Sursa modelului}
-\end{figure}
+\end{center}
+
+Modelul este construit in intregime avand ca baza frameworkul \textit{Lasagne}.
 
 \subsection{Antrenarea modelului}
 
@@ -269,8 +271,6 @@ Modelul ce genereaza retele bubble sorter a fost antrenat pe un set de input 100
         return ret_val
 \end{lstlisting}
 
-
-
 si arata astfel pentru un set de antrenament de 5 elemente:
 
 \begin{lstlisting}
@@ -285,15 +285,27 @@ si arata astfel pentru un set de antrenament de 5 elemente:
 	(3, 4), (0, 1), (1, 2), (2, 3), (0, 1), (1, 2), (0, 1)]]
 \end{lstlisting}
 
-Insa date de mai sus reprezinta la nivel abstract inputul si outputul dorit pentru retea. In proiect datele sunt reprezentate in binar ca un sir de 9 biti, iar interschimbarile nu sunt reprezentate explicit ca tuple. Reteaua va produce, practic, o lista de siruri biti ce vor fi grupate, in ordine, 2 cate 2.
+Insa date de mai sus reprezinta, la nivel abstract, inputul si outputul dorit pentru retea. In proiect datele sunt reprezentate in format binar ca un sir de 9 biti, iar interschimbarile nu sunt reprezentate explicit ca tuple. Reteaua va produce, practic, o lista de siruri biti ce vor fi grupate, in ordine, 2 cate 2. 
+
+Mai precis:
+\begin{enumerate}
+	\item \textbf{Setul de antrenament} este de forma $(x, Y)$ unde $x$ este un numar intreg, iar 
+	$Y=((a_1, b_1), (a_2, b_2), ..., (a_n, bn))$, unde $a_i, b_i$ sunt numere intregi.
+	\item \textbf{Outputul retelei} este de forma:
+	$$Out=(\underbrace{a_1, b_1}_{\text{C1}}, \underbrace{a_2, b_2}_{\text{C2}},\ \ \  ..., \ \ \  \underbrace{a_n, b_n}_{\text{Cn}})$$.
+	Unde $a_i$ reprezinta firul superior pe care va fi amplasat comparatorul $C_i$, iar $b_i$ reprezinta firul inferior. 
+\end{enumerate}
+
 
 Spre exemplu, pentru urmatorul input:
 
+\begin{center}
 \begin{lstlisting}
-numpy.array([[[0, 0, 0, 0, 0, 0, 0, 1, 1]]])
+numpy.array([[[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0]]])
 \end{lstlisting}
+\end{center}
 
-reprezinta dimensiunea 3, adica reteau va trebui sa genereze setul de comparatori pentru o retea de 3 elemente. Inputul de mai sus a fost testat pe o retea antrenata pe un set de date 1000 elemente, modelul este Bubble Sorter. Outputul produs este urmatorul:
+reprezinta dimensiunea 3, adica reteaua va trebui sa genereze setul de comparatori pentru o retea de 3 elemente. Inputul de mai sus a fost testat pe o retea antrenata pe un set de date 100 de elemente, modelul este \textit{Bubble Sorter}. Outputul produs este urmatorul:
 \begin{center}
 \begin{multicols}{2}
 \begin{lstlisting}
@@ -363,7 +375,7 @@ reprezinta dimensiunea 3, adica reteau va trebui sa genereze setul de comparator
 -- extinde in sectiune cu `Rezultate Obtinute`
 -- adauga schema retelelor obtinute, perechile input-output pentru 3 sample-uri de outputuri
  
-Semnificatia fiecarui double din lista este probabilitatea ca bitul respectiv sa fie 1. Acuratetea probabilitatilor se sporeste cu antrenarea sporita a modelului. Intr-un final, se grupeaza 2 cate 2 elementele din lista si se decodifica din binar in decimal.
+Semnificatia fiecarui double din lista este probabilitatea ca bitul respectiv sa fie $1$. Acuratetea probabilitatilor se sporeste cu antrenarea sporita a modelului. Intr-un final, se grupeaza $2$ cate $2$ elementele din lista si se decodifica din binar in decimal.
 
 \subsection{Prezentarea interfetei}
 
@@ -603,9 +615,9 @@ Retelele neuronale convolutionale sunt modele simple, proiectate sa primeasca un
 
 Retelele neuronale recurente se deosebesc de cele convolutionale prin posibilitatea de a primi un set de input variabil si a produce un set de output variabil. In practica se folosesc la procesarea limbajului natural. Acest tip de retele neuronale sunt ideale si pentru rezolvarea problemei de generare a retelelor de sortare, intrucat putem codifica numarul de fire din retea ca o secventa de lungime variabila, iar rezultatul, respectiv setul de comparatori pentru numarul de fire dat poate varia. Pe langa aceste considerente, acest tip de retele contin si o memorie atasata.
 
-Un caz particular de retele neuronale recurente sunt *masinile turing neurale*. Acestea fiind optimizate in a invata algoritmi imperativi simpli. Un exemplu ar fi problema sortarii, rezolvata in mod traditional cu un algoritm imperativ poate fi rezolvata folosind acest tip de retele. Pentru aceasta, reteaua va primi ca input tuple de forma $(X, Y)$. Unde $X$ reprezinta un sir de numere aflate in ordine random, iar $Y$ reprezinta varianta sortata a sirului $X$ cu un algoritm imperativ de sortare. Odata antrenata pe un set suficient de mare de date de acest fel, modelul va invata practic sa aplice algoritmul de sortare folosit pe componenta $Y$. 
+Un caz particular de retele neuronale recurente sunt \textit{Neural Turing Machines}. Acestea fiind optimizate in a invata algoritmi imperativi simpli. Un exemplu ar fi problema sortarii, rezolvata in mod traditional cu un algoritm imperativ poate fi rezolvata folosind acest tip de retele. Pentru aceasta, reteaua va primi ca input tuple de forma $(X, Y)$. Unde $X$ reprezinta un sir de numere aflate in ordine aleatoare, iar $Y$ reprezinta varianta sortata a sirului $X$ cu un algoritm imperativ de sortare. Odata antrenata pe un set suficient de mare de date de acest fel, modelul va invata practic sa aplice algoritmul de sortare folosit pe componenta $Y$. 
 
-Motivul prezentarii scenariului de mai sus este ca hiperparametrii si structura straturilor de neuroni dintr-o retea de neuronala folosita la sortarea de numere sunt similari in proportie foarte mare cu cei din reteaua proiectata sa genereze retele de sortare.
+Motivul prezentarii scenariului de mai sus este ca hiperparametrii si structura straturilor de neuroni dintr-o retea neuronala folosita la sortarea de numere sunt similari in proportie foarte mare cu cei din reteaua proiectata sa genereze retele de sortare.
 
 \subsection{Neural Turing Machine (NTM)}
 
@@ -673,25 +685,28 @@ $$ M_t(i) \leftarrow \tilde{M}_t(i) + w_t(i)a_t $$
 
 \subsubsection{Mecanismul de adresare}
 
-Adresarea se realizeaza prin doua modalitati:
+In articolul introdus de \textit{Graves}, adresarea se realizeaza prin doua modalitati:
 \begin{enumerate}
-	\item \textbf{In functie de continut}. Fiecare cap de citire sau scriere va produce un vector $k_t$ de lungime $M$ care este comparat cu fiecare vector $M_t(i)$ printr-o masura de similaritate $K[\cdot, \cdot]$. Sistemul de adresare pe baza continutului produce un vector normalizat $w_{t}^e$:
+	\item \textbf{In functie de continut}.
+	\item \textbf{In functie de locatie}. 
+\end{enumerate}
+
+Vom descrie doar prima metoda
+
+In \textit{adresarea pe baza de continut} fiecare cap de citire sau scriere va produce un vector $k_t$ de lungime $M$ care este comparat cu fiecare vector $M_t(i)$ printr-o masura de similaritate $K[\cdot, \cdot]$. Sistemul de adresare pe baza continutului produce un vector normalizat $w_{t}^e$:
 	$$ w_{t}^e = \frac{\exp{(\beta_tK[k_t, M_t(i)])}}{\sum_j \exp{(\beta_tK[k_t, M_t(j)])}}$$
 	
 	In articolul lui \textit{Graves} $K$ este definit:
 	$$ K[u, v] = \frac{u \cdot v}{||u|| \cdot ||v||} $$
 	
-	\item \textbf{In functie de locatie}
-\end{enumerate}
-
 
 \subsubsection{Aplicatii}
 
-\textit{Neural Turing Machines} inca se afla sub cercetare activa. Utilitatea acestei arhitecturi de retele neuronale este data posibilitatea unui model sa invete un \textit{program}. 
+\textit{Neural Turing Machines} inca se afla sub cercetare activa. Utilitatea acestei arhitecturi de retele neuronale este data posibilitatea unui model sa invete un \textit{program}.
 
 \section{Tehnologii folosite}
 
-In cadrul proiectului am facut uz de o serie de frameworkuri si biblioteci pentru a fi scutiti de unele detalii de implementare. In aceasta sectiune vom prezenta pe scurt tehnologiile principale folosite.
+In cadrul proiectului am facut uz de o serie de frameworkuri si biblioteci pentru a fi scutiti de unele detalii de implementare. In aceasta sectiune vom prezenta pe scurt tehnologiile principale folosite, motivatia alegerii unei tehnologii, dar si unde a fost utilizata.
 
 \subsection{NTMLasagne}
 
@@ -711,36 +726,42 @@ Theano este o biblioteca de python ce permite definirea si optimizarea de expres
 
 \subsection{Python}
 
-Python este un limbaj de scripting, multi paradigma. Motivul pentru care am ales sa implementam modelul in python este sintaxa usoara, suportul mare pentru biblioteci si frameworkuri de deep learning, atat ca documentatie, cat si ca implementari efective. 
+\textit{Python} este un limbaj de scripting, multi paradigma. Motivul pentru care am ales sa implementam modelul in python este sintaxa usoara, suportul mare pentru biblioteci si frameworkuri de \textit{deeplearning}, atat ca documentatie, cat si ca implementari efective. 
 
-De asemenea componenta de "model manager" care ruleaza intr-un thread fiecare model este scrisa in python.
+De asemenea componenta de \textit{model manager} care ruleaza intr-un thread fiecare model este scrisa in tot \textit{python}.
+
+In cadrul proiectului am folosit mai multe module pe care le mentionam succint in aceasta sectiune:
+\begin{enumerate}
+	\item \textbf{numpy} pentru reprezentarea inputului unui model, cat si pentru dependintele de mai sus (\textit{Lasagne}, \textit{NTM-Lasagne})
+	\item \textbf{cPickle} pentru a serializa un model antrenat.
+	\item \textbf{json} pentru a impacheta mesajele trimise la serverul Java.
+\end{enumerate}
 
 
 \subsection{Java}
 
 Java este un limbaj de programare orientat-obiect, puternic tipizat, conceput de către James Gosling la Sun Microsystems (acum filială Oracle) la începutul anilor ʼ90, fiind lansat în 1995. Cele mai multe aplicații distribuite sunt scrise în Java, iar noile evoluții tehnologice permit utilizarea sa și pe dispozitive mobile gen telefon, agenda electronică, palmtop etc. În felul acesta se creează o platformă unică, la nivelul programatorului, deasupra unui mediu eterogen extrem de diversificat. Acesta este utilizat în prezent cu succes și pentru programarea aplicațiilor destinate intranet-urilor
 
-In proiect, Java a fost folosit la crearea backendului pentru interfata web. Motivatia alegerii este experienta puternica anterioara a autorului.
+In proiect, Java a fost folosit la crearea \textit{backe-ndului} pentru interfata web. Motivatia alegerii este experienta puternica anterioara a autorului cu acest limba de programare.
 
 \subsection{Spring Boot}
 
 In cadrul proiectului am pus la dispozitie si o interfata web in care se afiseaza reprezentarea vizuala a retelei generate de modelul ales de utilizator. Backendul acestei interfete este scris in Java si are in spate Spring Boot.
 
-Pe scurt Spring Boot este frameworkul web pe care l-am folosit pentru a scrie serverul proiectului. Ni se pune la dispozitie posibilitatea de a scrie relativ usor o aplicatie web pe arhitectura MVC. 
-
+Pe scurt Spring Boot este frameworkul web pe care l-am folosit pentru a scrie serverul proiectului\footnote{Serverul ruleaza pe \textit{tomcat 8}}. Ni se pune la dispozitie posibilitatea de a scrie relativ usor o aplicatie web pe arhitectura \textit{MVC} \footnote{Designt Patternul Model-View-Controller}. 
 
 Motivul pentru care s-a ales Spring Boot in pofida unui alt framework web de Java este documentatia vasta si experienta anterioara a autorului cu aceasta tehnologie.
 
 \subsection{RaphaelJS}
 
-RaphaelJS reprezinta biblioteca de javascript folosita pentru desenarea in browser retelei generate de modelul ales de utilizator. RaphaelJS este un wrapper peste WebGL cu un API relativ usor de folosit.
+RaphaelJS reprezinta biblioteca de JavaScript folosita pentru desenarea in browser a retelei generate de modelul ales de utilizator. RaphaelJS este un wrapper peste WebGL cu un API relativ usor de folosit.
 
 
 \subsection{Twitter Bootstrap}
 
 Twitter Bootstrap este un framework web pentru componenta de frontend. Se pun la dispozitie mai multe clase CSS pentru crearea de componente vizuale precum butoane, bare de meniu, cat si un mecanism specific de de pozitionare a continutului.
 
-Motivul pentru care am introdus si aceasta dependinta in stiva de tehnologii folosita in proiect si nu am creat toata interfata in RaphaelJS este performanta. Desenarea intregului design si implementarea si mecanicilor din spate (precum gestionarea apasarilor de buton) ar fi fost remarcabil mai lenta.
+Motivul pentru care am introdus si aceasta dependinta in stiva de tehnologii folosita in proiect si nu am creat toata interfata in RaphaelJS este performanta. Desenarea intregului design si implementarea si mecanicilor din spate (precum gestionarea apasarilor de buton) ar fi fost remarcabil mai lenta. Ar fi fost o scadere redundanta in performanta.
 
 \pagebreak
 
