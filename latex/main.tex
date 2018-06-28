@@ -164,28 +164,363 @@ UNIVERSITATEA "ALEXANDRU IOAN CUZA" DIN IASI
 \newcommand{\code}[1]{\colorbox{light-gray}{\texttt{#1}}}
 
 
-\begin{abstract}
-
-Scopul acestei lucrari este de a construi un algoritm de deeplearning care sa genereze compartorii dintr-o retea de marime $N$. $N$ reprezinta numarul de fire din retea.
-Desi exista abordari neimperative functionale, care genereaza rezultate intr-un timp multumitor, nu s-a mai incercat pana acum generarea de retele de sortare prin aceasta abordare. Rezultatul obtinut este un model antrenat care produce rezultate pentru retele de dimensiuni mici.
 
 \tableofcontents
 
-\end{abstract}
 
 \vspace{80mm}
 
 \pagebreak
 
 \section{Introducere}
+Scopul acestei lucrari este de a construi un algoritm de deeplearning care sa genereze compartorii dintr-o retea de marime $N$. $N$ reprezinta numarul de fire din retea.
+Desi exista abordari neimperative functionale, care genereaza rezultate intr-un timp multumitor, nu s-a mai incercat pana acum generarea de retele de sortare prin aceasta abordare. Rezultatul obtinut este un model antrenat care produce rezultate pentru retele de dimensiuni mici.
 
-O retea de sortare reprezinta un model abstract din informatica, compus din fire si comparatori. Scopul comparatorilor este de a interschimba 2 numere de pe firele pe care sunt plasati asa in cat la finalul parcurgerii seriei de comparatori, outputul reteli se va afla in ordine sortata. Desi sunt modele simple, retelele de sortare au aplicatii numeroase in calculul paralel si sunt folosite la sortarea seturilor de numere pe placile grafice.
+In continuare prezentam succint capitolele prezente in lucrarea de fata, cat si continutul fiecauri capitol:
+\begin{enumerate}
+	\item \textbf{Problema}. In cadrul acestui capitol am descris problema abordata de prezenta lucrare fara a intra in detalii amanuntite despre fundamentele teoretice ce stau la baza acesteia. Am adaugat si un scurt istoric al abordarilor precedente relevante. 
+	\item \textbf{Retele de sortare}. Acest capitol are ca scop prezentarea cititorului fundamentele teoretice esentiale pentru intelegerea corecta a domeniului problemei. Tot in cadrul acestui capitol am expus si descrierea amanuntita a unei solutii precedente a problemei printr-o abordare pe care se bazeaza prezenta lucrare.
+	\item \textbf{Retele Neuronale}. Acest capitol incepe cu o descriere foarte scurta a conceptului de \textit{retea neuronala}, intrucat acest sub domeniu al informaticii este acoperit de programa de studii a facultatii, apoi in urmatoarele subcapitole se descrie conceptul de \textit{Neural Turing Machine}. Acesta fiind arhitectura pe care se bazeaza nucleul proiectului. Descrierea acestui concept este una pe larg, intrucat este introdus relativ recent si nu este prezent in programul de studii de licenta.
+	\item \textbf{Descrierea solutiei}. In acest capitol este descrisa arhitectura intregului proiect, modul de constructie a modelului si arhitectura modelului. De asemenea sunt prezentate rezultatele obtinute (\textit{retelele de sortare} generate), iar spre final sunt comentate bucatile relevante de cod din proiect.
+	\item \textbf{Tehnologii folosite}. Acest capitol are rolul de a expune motivatia, dar si partea din proiect unde este folosita o anumita tehnologie. In cazul tehnologiilor neprezente in programul de studii, se spun cateva cuvinte si despre istoricul lor si domeniul problemei lor.
+	\item \textbf{Concluzii}. In final, reiteram problema aborsata, rezultatele obtinute, dat se si prezinta directiile de viitor ale proiectului.
+\end{enumerate}
  
+\section{Contributii}
+
    In cadrul acestei lucrari mi-am propus sa dezvolt un model capabil sa genereze, pe baza unui numar $N$ de fire primit ca input, lista de comparatori necesari pentru o retea de sortare cu $N$ fire. In cadrul proiectului am dezvoltat si o interfata web ce permite vizualizarea cat si simularea unei sortari pe reteaua obtinuta de model. Cu aceasta ocazie scoatem in lumina si elementul de inovatie al acestei lucrari, si anume ca pana acum nu s-a mai incercat generarea de retele de sortare prin aceasta abordare. In spate, modelul foloseste o arhitectura de retele neuronale introdusa recent (in \textit{20 Oct 2014}), optimizata pentru invatarea de algoritmi imperativi. Modelul obtinut produce rezultate pentru retele de dimensiuni mici, de $2$, $3$ sau $4$ fire. Nu produce comparatori pentru retele care sa sorteze complet siruri de numere mai mari de $4$ elemente, dar acest lucru lasa loc de extindere a proiectului pe viitor.
 
 Motivatia din spatele alegerii proiectului de fata este data de viteza de generare ca timp a retelelor de sortare ce este semnificativ mai buna pe retele de dimeniuni mari fata celelalte abordari.
 
 Proiectul inglobeaza 2 modele antrenate pe seturi de antrenament diferite, bazate pe rezultatele a 2 algoritmi imperativi. Acesti 2 algoritmi imperativi au la baza modul de generare a interschimbarilor din algoritmii de sortare \textit{Bubble Sort} si \textit{Insertion Sort}. Fiecare model incearca sa produca rezultatele similare cu unul dintre cei 2 algoritmi imperativi folositi. Cele doua modele sunt rulate de o a doua componenta a proiectului, \textit{model manager}, intr-un \textit{thread}\footnote{S-a recurs la aceasta abordare din motive de performanta} separat fiecare model. Scopul acestei componente este sa centralizeze rezultatele de la cele doua modele si sa comunice cu componenta de \textit{backend} din spatele interfetei web. Intr-un final, ultima componenta a proiectului este cea de interfata web care afiseaza retelele produse de cele doua modele.
+
+\section{Problema}
+
+Problema pe care o atinge prezenta lucrare este cea a generarii retelelor de sortare. O retea de sortare reprezinta un model abstract din informatica, compus din fire si comparatori. Scopul comparatorilor este de a interschimba 2 numere de pe firele pe care sunt plasati asa in cat la finalul parcurgerii seriei de comparatori, outputul reteli se va afla in ordine sortata. Desi sunt modele simple, retelele de sortare au aplicatii numeroase in calculul paralel si sunt folosite la sortarea seturilor de numere pe placile grafice.
+
+In aceasta lucrare am incercat sa abordam problema intr-un mod nou, si anume prin antrenarea unui model bazat pe o arhitectura specializata in invatarea de algoritmi imperativi care sa produca comparatorii dintr-o retea de sortare de dimensiune $n$.
+
+\section{Retele de sortare}
+
+In cadrul acestui capitol prezentam acestui capitol prezentam fundamentele teoretice necesare pentru intelegerea conceptului de \textit{retea de sortare} cat si aplicatiile acestora in practica
+
+\subsection{Prezentare}
+
+O retea de sortare cu $n$ inputuri este o secventa fixa de comparatii si interschimbari (comparatori) ce sorteaza toate inputurile de marime $n$. Deoarece aceeasi secventa de comparatori sorteaza orice secventa de marime $n$, reprezinta un algoritm de sortare independent de date. Asta inseamna ca secventa de comparatii ce se executa nu depinde de inputul primit. Datorita structurii pe care o are o retea de sortare, sunt de preferat in implementarile paralele ale algoritmilor de sortare, precum cele de pe placile grafice.
+
+Motivati de aceste aplicatii in practica, retelele de sortare sunt un subiect important de cercetare inca din 1950. Un interes deosebit il au retelele de sortare optimale, care folosesc numarul minim posibil de comparatori. Generarea retelelor de sortare optimale reprezinta o problema grea de optimizare, investigata pentru prima data de O'Connor si Nelson pentri $4 \leq n \leq 8$. Retelele gasite de cei 2 aveau numarul minim de comparatori pentru $4, 5, 6$ si $8$ inputuri, dara veau nevoie de 2 comparatori in plus pentru $7$ inputuri. Acest rezultata a fost imbunatatit in 1968 de Batcher care a gasit retele minimale pentru $n \leq 8$.
+
+\begin{center}
+\begin{figure}
+
+\centering
+
+\begin{sortingnetwork}{4}{5}{1}
+\nodelabel{$x_4$, $x_3$, $x_2$, $x_1$}
+\nodeconnection{{1,2}}
+\nodeconnection{{3,4}}
+\nodeconnection{{1,3}}
+\nodeconnection{{2,4}}
+\nodeconnection{{2,3}}
+\nodelabel{$y_4$, $y_3$, $y_2$, $y_1$}
+\end{sortingnetwork}
+\\
+\label{Figura 1}
+\caption{O retea de sortare cu 4 inputuri. Valorile de input ${x_1, \ , x_2, \ , x_3, \ , x_4}$ din partea stanga a liniilor orizontale trec printr-o secventa de operatii de comparatii si interschimbari, reprezentate prin linii verticale ce conecteaza perechi de linii orizontale. Fiecare comparator de acest fel isi sorteaza cele doua valori de input, rezultand intr-un final in liniile orizontale ce contin valorile sortate de output ${y_1 \leq y_2 \leq y_3 \leq y_4}$, Aceasta este o retea minimala din punct de vedere a numarului de comparatori folositi.}
+
+\end{figure}
+\end{center}
+
+Pana in 2013, se cunosteau retele de sortare minimale doar pentru inputuri $n \leq 8$ (vezi Tabelul 1). In 2013, Valsalam a introdus un articol in care prezinta modalitati de generare a retelelor optimale prin algoritmi evolutivi si reuseste sa obtina noi rezultate pentru $n$ de marime $17 \ , 18, \  19, \ 20, \ , 21$ si $22$. In continuare, gasirea de retele optimale pentru inputuri $n > 8$ ramane o problema deschisa. Un caz particualr de interes este reprezentat de retelele descoperite de Green.
+
+\begin{figure}
+\centering
+\begin{tabu} to 1.1 \textwidth {  X[0] | X[1] | X[2] |  X[3] | X[4] | X[5] | X[6] | X[7] | X[8] | X[9] | X[10] | X[11] | X[12] | X[13] | X[14] | X[15] | X[16] }
+ \hline
+ n & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 & 16\\
+ \hline
+ C  & 0 & 1 & 3 & 5 & 9 & 12 & 16 & 19 & 25 & 29 & 35 & 39 & 45 & 51 & 56 & 60\\
+\hline
+\end{tabu}
+\caption{Numarul minim de comparatori cunoscut pentru retele de sortare de dimensiune $n \leq 16$. Aceste retele au fost studiate intens, dar s-a dovedit ca doar rezultatele pentru $ n \leq 8$ sunt minimale.}
+
+\end{figure}
+
+\subsection{Principiul 0-1}
+
+\subsubsection{Enunt}
+\textit{Principiul 0-1} este o modalitate de verificare a corectitudinii unei retele de sortare. Conform acestuia, o retea de sortare care sorteaza corect orice de secventa de $0$ si $1$, va sorta corect orice secventa de numere.
+
+\subsubsection{Demonstratie}
+
+\textbf{Lemma:} Presupunem $f$ o functie monotona, crescatoare. Atunci, daca o retea mapeaza $x_1$, $x_2$,...,$x_n$ la $y_1$, $y_2$,...$y_n$, va mapa $f(x_1)$, $f(x_2)$,..., $f(x_n)$ la $f(y_1)$, $f(y_2)$,...,$f(y_n)$. 
+
+\textbf{Demonstratie:} Prin inductie la numarul de comparatori din retea folosind:
+\begin{tightcenter} 
+ $f(min(a, b)) = min(f(a), f(b))$\\
+ $f(max(a, b)) = max(f(a), f(b))$\\
+\end{tightcenter}
+
+Sa presupunem ca o \textit{retea} nu este retea de sortare. Atunci, va mapa valorile $x_1$, $x_2$,...,$x_n$ arbitrare, la $y_1$, $y_2$,..., $y_n$. Unde $y_i > y_{i+1}$ pentru $1 \leq i  < n$. Presupunem $f(x) = 1$ daca si numai daca $x \geq y_i$, $0$ altfel. Reteaua va mapa $f(x_1)$, $f(x_2)$,..., $f(x_n)$ la $f(y_1)$, ..., $f(y_i)=1$, $f(y_{i+1})=0$, ..., $f(y_n)$. Astfel, reteaua nu va sorta toate inputurile de tipul $0-1$.
+
+
+
+\subsection{Generarea retelelor de sortare folosind algoritmi evolutivi}
+
+In acest subcapitol descriem succint modalitatea de generare a retelelor de sortare optimale folosind algorimti evolutivi. Motivul pentru care am ales sa aducem in lumina si aceasta abordare este ca, proflema fiind una dificila de rezolvat prin metode imperative, s-a incercat abordarea acesteia prin metode evolutive, iar rezultatele sunt surprinzatoare.
+
+In principal, vom descrie metoda introdusa de \textit{Valsalam} si \textit{Miikkulainen}, (SENSO[15]). 
+
+\subsubsection{Reprezentarea functiilor booleane}
+
+Folosind principiul \textit{0-1} descris mai sus, putem exprima inputul unei retele de sortare ca variabile booleane, iar outputul retelei ca functii de aceste variabile. Astfel, problema gasirii comparatorilor pentru o retea de sortare se reduce la a numara firele ce au ca input valoarea $1$ si a seta outputul firelor de output \textit{de mai jos} la valoarea $1$, iar outputul firelor ramase la $0$. Deoarece aceste functii sunt implementate de comparatorii din retea, problema gasirii unei retele de sortare se poate reduce la problema gasirii unei secvente de comparatori care genereaza functiile de output ale retelei. 
+
+
+\begin{figure}
+\centering
+\begin{sortingnetwork}{4}{5}{1}
+\nodelabel{$x_4$, $x_3$, $x_2$, $x_1$}
+\nodeconnection{{1,2}}
+\nodeconnection{{3,4}}
+\nodeconnection{{1,3}}
+\nodeconnection{{2,4}}
+\nodeconnection{{2,3}}
+\nodelabel{$f_4$, $f_3$, $f_2$, $f_1$}
+\end{sortingnetwork}
+\caption{Potrivit documentului introdus de Valsalam, outputurile retelei pot fi exprimate astfel:
+	$ \\
+	f_1= x_1 \land x_2 \land x_3 \land x_4, \\ 
+	f_2 = (x_1 \land x_2 \land x_3) \vee (x_1 \land x_2 \land x_4 ) \vee \cdot \cdot \cdot \\
+	f_3 = (x_1 \land x_3) \vee (x_1 \land x_3) \vee \cdot \cdot \cdot \\
+	f_4 = x_1 \vee x_2 \vee x_3 \vee x_4\\ $}
+	Fiecare comparator produce o conjuctie a inputurilor sale pe firul superios si o disjunctie a inputurilor sale pe firul inferior. In consecinta, functiile de output ale retelei sunt combinatii de disjunctii si conjunctii ale inputurilor sale. Prin urmare, o retea de sortare poate fi privita ca o secventa de comparatori care genereaza functiile de output pe baza inputurilor sale. Valsalam a folosit aceasta observatie in proiectarea algoritmului evolutiv descris mai jos.
+	
+\end{figure}
+
+
+\subsubsection{Simetrii in retele de sortare}
+O simetrie intr-o retea de sortare este o operatie pe setul de functii de output al retelei care nu afecteaza outputul retelei. Valsalam defineste formal operatie de simetrie  $\sigma_i$ pentru $1 \leq i \leq \mid\frac{n}{2}|$ care opereaza pe setul de functii de output din retea prin interschimbarea functiei $f_i$ si dualei $f_{n+1-i}$, interschimband conjunctia si disjuctia dintre ele. Compozitia simetriilor este tot o simetrie, fiind inchisa la compozitie. 
+
+\subsubsection{Minimizarea numarului de comparatori necesari}
+
+Minimizarea numarului de comparatori presupune gasirea comparatorilor ce pot fi impartiti pe mai multe fire.
+
+\subsubsection{Evoluarea retelelor minimale}
+
+Valsalam initializeaza evolutia cu o populatie de solutii produse de algoritmul greedy. Valoarea de \textit{fitness} a fiecarei solutii este $-1 \  \cdot $ \texttt{numarul de comparatori}, pentru ca imbunatatirea \textit{fitness}-ului sa rezulte intr-un numar mai mic de comparatori generati. La fiecare noua generatie, selectia se face prin metoda \textit{turneu} pe baza valorii de \textit{fitness} pentru a selecta indivizii din populatie pentru reproducere. La reproducere se muteaza reteaua parinte si se creeaza o retea de \textit{offspring} in doi pasi:
+\begin{enumerate}
+	\item Un comparator este ales in mod aleator din retea si apoi se trunchiaza reteaua dupa el, eliminand comparatorii ce urmeaza dupa el.
+	\item Algoritmul greedy este folosit pentru a adauga noi comparatori construind o noua retea. Pentru ca algoritmul greedy alege un comparator cu cea mai mare utilitate in mod aleator, aceasta mutatie exploreaza o noua combinatie de comparatori ce ar putea fi mult mai folositori decat comparatorul parinte.
+\end{enumerate}
+Aceasta abordare restrange spatiul de cautare la comparatorii generati de algorimtul greedy.
+SENSO[15] a fost rulat pe o populatie de marime 200 pentru 500 de generatii ca sa evolueze de retele de sortare optimale. La fiecare generatie, au selectate cele 100 de retele cu numarul minimal de comparatori pentru a estima modelul. Acelasi set de retele a fost copiat la urmatoarea generatie, fara modificari, ....
+
+Experimentul de mai sus a fost repetat de $20$ de ori pentru fiecare varianta a algoritmului greedy si pentru fiecare input $n \leq 23$
+
+Numarul de comparatori gasit de SENSO in corespondenta cu marimea reteli este reprezentat in figura de mai jos.
+
+\begin{figure}
+\centering
+\begin{tabu} to 1.19	 \textwidth {  X[0] | X[1]  |  X[2]  |  X[3] | X[4] | X[5] | X[6] | X[7] | X[8] | X[9] | X[10] | X[11] | X[12] }
+ \hline
+ n & 12 & 13 & 14 & 15 & 16 & 17 & 18 & 19 & 20 & 21 & 22 & 23\\
+ \hline
+ $C$  & 39 & 45 & 51 & 56 & 60 & 73 & 79 & 88 & 93 & 103 & 110 & 118\\
+ \hline
+ $C_2$ & 39 & 45 & 51 & 56 & 60 & \textbf{71} & \textbf{78} & \textbf{86} & \textbf{92} & \textbf{102} & \textbf{108} & 118 \\
+ 
+\hline
+\end{tabu}
+\caption{Rezultate obtinute de Valsalam. Rezultatele sunt extrase din [15]. $C$ reprezinta numarul minim de comparatori cunoscut pana atunci pentru o retea cu $n$ inputuri, iar $C_2$ reprezinta numarul de comparatori obtinuti prin abordarea evolutiva. Au fost marcate in bold, retelele pentru care au fost scosi un numar de comparatori mai bun.}
+\end{figure}
+
+
+\subsection{Retelele optimale}
+
+\subsubsection{Prezentare}
+In aceasta sectiune a lucrarii dorim sa amintim despre \textit{retelele lui Green}, intrucat folosind metoda lui \textit{Green} de construire a retelelor obtinem numarul minimal de comparatori.
+
+Mai jos afisam rezultatul metodei lui \textit{Green} pentru o retea de marime $16$:
+
+\begin{figure}
+\centering
+\includegraphics[scale=1.0]{green_net}
+\\
+\caption{Reteaua de comparatori a lui green pentru un input $n = 16$}
+\end{figure}
+
+Acesta retea are $60$ de comparatori, care reprezinta cea mai mica valoare cunoscuta pentru o retea cu 16 inputuri[16][17]. Comparatorii dintr-o astfel de retea sunt simetric aranjati de la axa orizontala pana in mijlocul retelei. Acest tip de retele au reprezentat pentru unii cercetatorii obiectiv de studiu pentru dezvoltarea algoritmilor evolutivi care genereaza retele de sortare. 
+
+\subsection{Metode imperative de generare a retelelor de sortare}
+
+Exista mai multe metode imperative pentru a genera o retea de sortare. Cele mai usoare modalitati sunt de a generea o 
+retea bazata pe algoritmii de sortare bubble sort si insertion sort. In cazul primei optiuni se adauga un comparator intre
+firele $0$ si $1$, $1$ si $2$, ..., $n-1$ si $n$. Se reaia procesul de creere a comparatorilor inserand un comparator intre $0$ si $1$, ..., $n-2$ si $n-1$. Se repeta aceasta procedura de creere a comparatorilor pana la pasul in care inseram un singur comparator intre firele $0$ si $1$.
+
+In cazul unei insertion sorting network, o retea bazata pe insertion sort procesul este similar, singura diferenta este ca buclele de creare a comparatorilor sunt in ordine inversa fata de metoda precedenta. Astfel, prima data se creeaza un comparator 
+intre firul $0$ si $1$. Se creeaza un comparator intre $0$ si $1$, $2$. Pana cand se ajunge la pasul in care se generaza un comparator intre $0$ si $1$, ..., $n-1$ si $n$. 
+
+Un exemplu de bubble sorting network:
+
+\begin{figure}
+\centering
+\begin{tikzpicture}
+%\fill [gray!15] (1.5,1.5) -- (2.5,1.5) -- (2.5,2.5) -- (1.5,2.5) -- cycle;
+\foreach \a in {1,...,4}
+  \draw[thick] (0,\a) -- ++(8,0);
+\foreach \x in {{1,4},{1,3}, {2,3},{2,2},{3,2},{3,1},{4,4},{4,3},{5,3},{5, 2}, {6, 3}, {6, 4}}
+  \filldraw (\x) circle (1.5pt);
+\draw[thick] (1,4) -- (1,3);
+\draw[thick] (2,3) -- (2,2);
+\draw[thick] (3,2) -- (3,1);
+\draw[thick] (4,4) -- (4,3);
+\draw[thick] (5,3) -- (5,2);
+\draw[thick] (6,4) -- (6,3);
+\end{tikzpicture}
+\caption{Retea de sortata generata pe baza algoritmului \textit{Bubble Sort} cu $n=4$ inputuri. }
+\end{figure}
+
+Un exemplu de insertion sorting network:
+
+\begin{figure}
+\centering
+\begin{tikzpicture}
+%\fill [gray!15] (1.5,1.5) -- (2.5,1.5) -- (2.5,2.5) -- (1.5,2.5) -- cycle;
+\foreach \a in {1,...,4}
+  \draw[thick] (0,\a) -- ++(8,0);
+\foreach \x in {{1,4},{1,3}, {3,4},{3,3},{2,3},{2,2},{4,2},{4,1},{5,3},{5, 2}, {6, 3}, {6, 4}}
+  \filldraw (\x) circle (1.5pt);
+\draw[thick] (1,4) -- (1,3);
+\draw[thick] (3,4) -- (3,3);
+\draw[thick] (2,3) -- (2,2);
+\draw[thick] (4,2) -- (4,1);
+\draw[thick] (5,3) -- (5,2);
+\draw[thick] (6,4) -- (6,3);
+\end{tikzpicture}
+\caption{Retea de sortare generata pe baza algoritmului \textit{Insertion Sort} pentru $n=4$ inputuri.}
+\end{figure}
+
+Algoritmul imperativ pe care l-am folosit pentru a genera un bubble sorting network este:
+\begin{lstlisting}
+    def bubble_sorter(n):
+        if n <= 1:
+            return []
+
+        ret_val = []
+        for i in range(0, n - 1):
+            ret_val.append((i, i + 1))
+        ret_val += self.dummy_sorter(n - 1)
+        return ret_val
+\end{lstlisting}
+Pentru un numar de fire dat, $n$, generam lista de comparatori, adica conexiunile dintre firele din retea.
+%\break
+
+    Aceste arhitecturi de retele de sortare nu sunt optimale si vor sorta un sir de numere ca input in timp
+$O(n^2)$. Retelele optimale si cele mai des folosite in practica sunt bazate pe algoritmul bitonic sort, acestea ating complexitate de $O(nlog^2(n))$. Insa motivul pentru care am prezentat bubble sorting network si insertion sorting network este
+ca bazandu-ne pe acesti algoritmi am generat datele de antrenament pentru modelul dezvoltat. Motivatia ar fi ca, cel putin din experimentele realizate in cadrul acestui proiect, este mai usor de antrenat un model care sa produca date relevante atunci cand primeste date de antrenament generate pe baza acestor algoritmi.
+
+\subsection{Aplicatii}
+Cea mai la indemana aplicatie in practica a retelelor de sortare o reprezinta sortarea pe placile grafice. Placile grafice fiin ddispozitive orientate puternic spre paralelizarea instructiunilor, pe arhitectura \textit{single-instruction, multiple data (SIMD}. Si avand in vedere si ca placile grafice depasesc in performanta CPU-ul cand vine vorba de algoritmi cu limita de memorie si timp de calcul, retelele de sortare devin o optiune eficienta.
+
+
+\section{Retele neuronale}
+
+Retelele neuronale reprezinta o ramura a inteligentei artificiale. Sunt modele abstracte ce incearca sa simuleze creierul uman
+in modul de intercationare cu natura. O retea neuronala este compusa din neuroni artificiali. Neuronii artificiali din retea sunt dispusi pe mai multe straturi. Din exterior le putem vedea ca pe un black box conectat la un strat de neuroni de input, responabil de preluarea inputlui si la un strat de neuroni de output, responsabil pentru a genera outputul. In functie de neuronii din stratul de output care se vor activa se decodifica rezultatul produs de retea.
+
+\subsection{Arhitecturi de retele neuronale}
+Retelele neuronale convolutionale sunt modele simple, proiectate sa primeasca un set de input fix si sa produca un set output output de marime fixa. In practica, acest tip de retele sunt ideale pentru computer vision. Sunt mult mai eficiente din punct de vedere al resurselor consumate la sarcini precum recunoasterea de obiecte in imagini. 
+
+Retelele neuronale recurente se deosebesc de cele convolutionale prin posibilitatea de a primi un set de input variabil si a produce un set de output variabil. In practica se folosesc la procesarea limbajului natural. Acest tip de retele neuronale sunt ideale si pentru rezolvarea problemei de generare a retelelor de sortare, intrucat putem codifica numarul de fire din retea ca o secventa de lungime variabila, iar rezultatul, respectiv setul de comparatori pentru numarul de fire dat poate varia. Pe langa aceste considerente, acest tip de retele contin si o memorie atasata.
+
+Un caz particular de retele neuronale recurente sunt \textit{Neural Turing Machines}. Acestea fiind optimizate in a invata algoritmi imperativi simpli. Un exemplu ar fi problema sortarii, rezolvata in mod traditional cu un algoritm imperativ poate fi rezolvata folosind acest tip de retele. Pentru aceasta, reteaua va primi ca input tuple de forma $(X, Y)$. Unde $X$ reprezinta un sir de numere aflate in ordine aleatoare, iar $Y$ reprezinta varianta sortata a sirului $X$ cu un algoritm imperativ de sortare. Odata antrenata pe un set suficient de mare de date de acest fel, modelul va invata practic sa aplice algoritmul de sortare folosit pe componenta $Y$. 
+
+Motivul prezentarii scenariului de mai sus este ca hiperparametrii si structura straturilor de neuroni dintr-o retea neuronala folosita la sortarea de numere sunt similari in proportie foarte mare cu cei din reteaua proiectata sa genereze retele de sortare.
+
+\subsection{Neural Turing Machine (NTM)}
+
+Retelele NTM fac partea din clasa retelelor neuronale recurente si sunt introduse relativ recent. Au fost introduse intr-un articol publicat de Alex Graves in 2014. Acest model de retea neuronala combinata capacitatea de pattern matching a retelelor neuronale cu capacitatea algoritmica a calculatoarelor programabile. Mai exact, putem folosi acest model de retea pentru a invata algoritmti simpli. In paperul introdus de Graves sunt aduse rezultate pentru algoritmi de copiere a unui sir sau sortare. Aceste aspecte ne inspira o probabilitate mare ca o retea bazata pe acest model poate produce rezultate multumitoare pentro problema abordata.
+
+\subsubsection{Descriere}
+
+Neural Turing Machines sunt inspirate din doua lumi: Machine Learning si Teoria Computabilitatii. Prima le permite calculatoarelor sa realizeze taskuri care, desi pentru oameni sunt usoare, se credeau grele pentru calculatoare, precum computer vision. A doua defineste formal lucrurile de care este capabil un calculator. 
+
+Legatura dintre inteligenta artificiala si teoria computatiei in 1940. Modelul introdus de el, Masina Turing, e un model computational clasic care opereaza pe o banda de memorie infinita si un cap care poate sa scrie sau sa citeasca. Pe baza acestor aceste rezultate se inspira si Neural Turing Machines.
+
+Un exemplu de NTM desfasurat in timp:
+
+
+\begin{figure}
+\centering
+\includegraphics[scale=0.2]{ntm}
+\\
+\caption{Arhitectura unui Neural Turing Machine. Sursa: \texttt{https://medium.com/snips-ai/
+ntm-lasagne-a-library-for-neural-turing-machines
+-in-lasagne-2cdce6837315}}
+\end{figure}
+
+Componenta de controller din cadrul unui Neural Turing Machine este o retea neuronala care pune la dispozitie reprezentarea interna a inputului care este folosit de capetele de scriere si citire ca sa poate interactiona cu memoria. Reprezentarea aceasta nu este identica cu cea stocata in memorie. Tipul de controler pe care il alegem reprezinta cea mai semnificativa alegere arhitecturala. Controllerul poate fi fie o retea feed-forward, fie o retea recurenta.
+
+Capetele de scriere si citire sunt singurele componente din cadrul unui Neural Turing Machine care interactioneaza in mod direct cu memoria. Intern, comportamentul fiecarui dintre capete este controlat de vectorul de weighturi care este actualizat la fiecare pas in timp. Fiecare weight din vector corespunde cu gradul de interactiune cu fiecare celula din memorie. Un weight de 1 focuseaza atentia NTM-ului spre celula respectiva.
+
+Reprezentare vizuala a notiunilor descrise mai sus:
+
+\begin{figure}
+\centering
+\includegraphics[scale=0.3]{rw_head}
+\\
+\caption{Arhitectura capului de scriere/citire a unui \textit{Neural Turing Machine}. Sursa: \texttt{https://medium.com/snips-ai/
+ntm-lasagne-a-library-for-neural-turing-machines
+-in-lasagne-2cdce6837315}}
+\end{figure}
+
+In continuare prezentam succint partile critice din aceasta arhitectura, asa cum au fost descrise de \textit{Graves} in [21].
+
+\subsubsection{Operatia de citire}
+Fie $M_t$ continutul matricii $N \times M$ de memorie la timpul $t$. $N$ reprezentand numarul de celule de meorie, iar $M$ este marimea vectorului de la fiecare locatie. Fie $w_t$ un vector de \textit{weighturi} peste $N$ locatii generat de capul de citire. Pentru ca toate \textit{weight}-urile sunt normalizate, ce $N$ elemente ale $w_t(i)$ suporta urmatoarea constrangere:
+
+$$\sum_t w_t(i)= 1, 0 \leq w_t(i) \leq 1,\ \ \ \forall i $$
+
+Vectorul $r_t$ de lungime $M$ returnat de capul de citire este definit:
+
+$$r_t \leftarrow \sum_{t} w_t(i)M_t(i) $$
+\subsubsection{Operatia de scriere}
+Fiecare operatie de scriere din aceasta arhitecura este impartita in doua parti:
+\begin{enumerate}
+	\item o operatie de stergere (\textit{erase})
+	\item o operatie de adaugare (\textit{add})
+\end{enumerate}
+
+Fiind dat un vector de weighturi $w_t$ generat de capul de scriere la timpul $t$, si un vector de stergere (\textit{erase vector}) $e_t$ cu elemente in $(0, 1)$, vectorii de memorie $M_{t-1}(i)$ sunt modificati astfel:
+
+$$ \tilde{M}_t(i) \leftarrow M_{t-1}(i)[1 - w_t(i)e_t] $$
+
+unde $1$ reprezinta un vector linie cu elemente $1$. Elementele de la o locatie de memorie sunt setate la $0$ daca atat \textit{weight}-urile de la acea locatie, cat si elementul de trebuie sters sunt $1$. Altfel, daca oricare dintre \textit{weight}-uri sau elementul ce trebuie sters sunt $0$, meoria este lasata neschimbata. 
+
+Capul de citire si un vector $a_t$ de lungime $M$ ce este adaugat in memorie dupa pasul de stergere:
+
+$$ M_t(i) \leftarrow \tilde{M}_t(i) + w_t(i)a_t $$
+
+\subsubsection{Mecanismul de adresare}
+
+In articolul introdus de \textit{Graves}, adresarea se realizeaza prin doua modalitati:
+\begin{enumerate}
+	\item \textbf{In functie de continut}.
+	\item \textbf{In functie de locatie}. 
+\end{enumerate}
+
+Vom descrie doar prima metoda
+
+In \textit{adresarea pe baza de continut} fiecare cap de citire sau scriere va produce un vector $k_t$ de lungime $M$ care este comparat cu fiecare vector $M_t(i)$ printr-o masura de similaritate $K[\cdot, \cdot]$. Sistemul de adresare pe baza continutului produce un vector normalizat $w_{t}^e$:
+	$$ w_{t}^e = \frac{\exp{(\beta_tK[k_t, M_t(i)])}}{\sum_j \exp{(\beta_tK[k_t, M_t(j)])}}$$
+	
+	In articolul lui \textit{Graves} $K$ este definit:
+	$$ K[u, v] = \frac{u \cdot v}{||u|| \cdot ||v||} $$
+	
+
+\subsubsection{Aplicatii}
+
+\textit{Neural Turing Machines} inca se afla sub cercetare activa. Utilitatea acestei arhitecturi de retele neuronale este data posibilitatea unui model sa invete un \textit{program}.
 
 
 \section{Descrierea solutiei}
@@ -417,337 +752,7 @@ reprezinta dimensiunea 3, adica reteaua va trebui sa genereze setul de comparato
 \end{multicols}
 \end{center}
 
--- extinde in sectiune cu `Rezultate Obtinute`
--- adauga schema retelelor obtinute, perechile input-output pentru 3 sample-uri de outputuri
- 
 Semnificatia fiecarui double din lista este probabilitatea ca bitul respectiv sa fie $1$. Acuratetea probabilitatilor se sporeste cu antrenarea sporita a modelului. Intr-un final, se grupeaza $2$ cate $2$ elementele din lista si se decodifica din binar in decimal.
-
-\subsection{Prezentarea interfetei}
-
--- pune 1-2-3 screenshoturi
--- vorbeste foarte succint despre fiecare optiune pe care o are utilizatorul
-
-\section{Retele de sortare}
-
-In cadrul acestui capitol prezentam acestui capitol prezentam fundamentele teoretice necesare pentru intelegerea conceptului de \textit{retea de sortare} cat si aplicatiile acestora in practica
-
-\subsection{Prezentare}
-
-O retea de sortare cu $n$ inputuri este o secventa fixa de comparatii si interschimbari (comparatori) ce sorteaza toate inputurile de marime $n$. Deoarece aceeasi secventa de comparatori sorteaza orice secventa de marime $n$, reprezinta un algoritm de sortare independent de date. Asta inseamna ca secventa de comparatii ce se executa nu depinde de inputul primit. Datorita structurii pe care o are o retea de sortare, sunt de preferat in implementarile paralele ale algoritmilor de sortare, precum cele de pe placile grafice.
-
-Motivati de aceste aplicatii in practice, retelele de sortare sunt un subiect important de cercetare inca din 1950. Un interes deosebit il au retelele de sortare optimale, care folosesc numarul minim posibil de comparatori. Generarea retelelor de sortare optimale reprezinta o problema grea de optimizare, investigata pentru prima data de O'Connor si Nelson pentri $4 \leq n \leq 8$. Retelele gasite de cei 2 aveau numarul minim de comparatori pentru $4, 5, 6$ si $8$ inputuri, dara veau nevoie de 2 comparatori in plus pentru $7$ inputuri. Acest rezultata a fost imbunatatit in 1968 de Batcher care a gasit retele minimale pentru $n \leq 8$.
-
-\begin{center}
-\begin{figure}
-
-\centering
-
-\begin{sortingnetwork}{4}{5}{1}
-\nodelabel{$x_4$, $x_3$, $x_2$, $x_1$}
-\nodeconnection{{1,2}}
-\nodeconnection{{3,4}}
-\nodeconnection{{1,3}}
-\nodeconnection{{2,4}}
-\nodeconnection{{2,3}}
-\nodelabel{$y_4$, $y_3$, $y_2$, $y_1$}
-\end{sortingnetwork}
-\\
-\label{Figura 1}
-\caption{O retea de sortare cu 4 inputuri. Valorile de input ${x_1, \ , x_2, \ , x_3, \ , x_4}$ din partea stanga a liniilor orizontale trec printr-o secventa de operatii de comparatii si interschimbari, reprezentate prin linii verticale ce conecteaza perechi de linii orizontale. Fiecare comparator de acest fel isi sorteaza cele doua valori de input, rezultand intr-un final in liniile orizontale ce contin valorile sortate de output ${y_1 \leq y_2 \leq y_3 \leq y_4}$, Aceasta este o retea minimala din punct de vedere a numarului de comparatori folositi.}
-
-\end{figure}
-\end{center}
-
-Pana in 2013, se cunosteau retele de sortare minimale doar pentru inputuri $n \leq 8$ (vezi Tabelul 1). In 2013, Valsalam a introdus un articol in care prezinta modalitati de generare a retelelor optimale prin algoritmi evolutivi si reuseste sa obtina noi rezultate pentru $n$ de marime $17 \ , 18, \  19, \ 20, \ , 21$ si $22$. In continuare, gasirea de retele optimale pentru inputuri $n > 8$ ramane o problema deschisa. Un caz particualr de interes este reprezentat de retelele descoperite de Green.
-
-\begin{figure}
-\centering
-\begin{tabu} to 1.1 \textwidth {  X[0] | X[1] | X[2] |  X[3] | X[4] | X[5] | X[6] | X[7] | X[8] | X[9] | X[10] | X[11] | X[12] | X[13] | X[14] | X[15] | X[16] }
- \hline
- n & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 & 16\\
- \hline
- C  & 0 & 1 & 3 & 5 & 9 & 12 & 16 & 19 & 25 & 29 & 35 & 39 & 45 & 51 & 56 & 60\\
-\hline
-\end{tabu}
-\caption{Numarul minim de comparatori cunoscut pentru retele de sortare de dimensiune $n \leq 16$. Aceste retele au fost studiate intens, dar s-a dovedit ca doar rezultatele pentru $ n \leq 8$ sunt minimale.}
-
-\end{figure}
-
-\subsection{Principiul 0-1}
-
-\subsubsection{Enunt}
-\textit{Principiul 0-1} este o modalitate de verificare a corectitudinii unei retele de sortare. Conform acestuia, o retea de sortare care sorteaza corect orice de secventa de $0$ si $1$, va sorta corect orice secventa de numere.
-
-\subsubsection{Demonstratie}
-
-\textbf{Lemma:} Presupunem $f$ o functie monotona, crescatoare. Atunci, daca o retea mapeaza $x_1$, $x_2$,...,$x_n$ la $y_1$, $y_2$,...$y_n$, va mapa $f(x_1)$, $f(x_2)$,..., $f(x_n)$ la $f(y_1)$, $f(y_2)$,...,$f(y_n)$. 
-
-\textbf{Demonstratie:} Prin inductie la numarul de comparatori din retea folosind:
-\begin{tightcenter} 
- $f(min(a, b)) = min(f(a), f(b))$\\
- $f(max(a, b)) = max(f(a), f(b))$\\
-\end{tightcenter}
-
-Sa presupunem ca o \textit{retea} nu este retea de sortare. Atunci, va mapa valorile $x_1$, $x_2$,...,$x_n$ arbitrare, la $y_1$, $y_2$,..., $y_n$. Unde $y_i > y_{i+1}$ pentru $1 \leq i  < n$. Presupunem $f(x) = 1$ daca si numai daca $x \geq y_i$, $0$ altfel. Reteaua va mapa $f(x_1)$, $f(x_2)$,..., $f(x_n)$ la $f(y_1)$, ..., $f(y_i)=1$, $f(y_{i+1})=0$, ..., $f(y_n)$. Astfel, reteaua nu va sorta toate inputurile de tipul $0-1$.
-
-
-
-\subsection{Generarea retelelor de sortare folosind algoritmi evolutivi}
-
-In acest subcapitol descriem succint modalitatea de generare a retelelor de sortare optimale folosind algorimti evolutivi. Motivul pentru care am ales sa aducem in lumina si aceasta abordare este ca, proflema fiind una dificila de rezolvat prin metode imperative, s-a incercat abordarea acesteia prin metode evolutive, iar rezultatele sunt surprinzatoare.
-
-In principal, vom descrie metoda introdusa de \textit{Valsalam} si \textit{Miikkulainen}, (SENSO[15]). 
-
-\subsubsection{Reprezentarea functiilor booleane}
-
-Folosind principiul \textit{0-1} descris mai sus, putem exprima inputul unei retele de sortare ca variabile booleane, iar outputul retelei ca functii de aceste variabile. Astfel, problema gasirii comparatorilor pentru o retea de sortare se reduce la a numara firele ce au ca input valoarea $1$ si a seta outputul firelor de output \textit{de mai jos} la valoarea $1$, iar outputul firelor ramase la $0$. Deoarece aceste functii sunt implementate de comparatorii din retea, problema gasirii unei retele de sortare se poate reduce la problema gasirii unei secvente de comparatori care genereaza functiile de output ale retelei. 
-
-
-\begin{figure}
-\centering
-\begin{sortingnetwork}{4}{5}{1}
-\nodelabel{$x_4$, $x_3$, $x_2$, $x_1$}
-\nodeconnection{{1,2}}
-\nodeconnection{{3,4}}
-\nodeconnection{{1,3}}
-\nodeconnection{{2,4}}
-\nodeconnection{{2,3}}
-\nodelabel{$f_4$, $f_3$, $f_2$, $f_1$}
-\end{sortingnetwork}
-\caption{Potrivit documentului introdus de Valsalam, outputurile retelei pot fi exprimate astfel:
-	$ \\
-	f_1= x_1 \land x_2 \land x_3 \land x_4, \\ 
-	f_2 = (x_1 \land x_2 \land x_3) \vee (x_1 \land x_2 \land x_4 ) \vee \cdot \cdot \cdot \\
-	f_3 = (x_1 \land x_3) \vee (x_1 \land x_3) \vee \cdot \cdot \cdot \\
-	f_4 = x_1 \vee x_2 \vee x_3 \vee x_4\\ $}
-	Fiecare comparator produce o conjuctie a inputurilor sale pe firul superios si o disjunctie a inputurilor sale pe firul inferior. In consecinta, functiile de output ale retelei sunt combinatii de disjunctii si conjunctii ale inputurilor sale. Prin urmare, o retea de sortare poate fi privita ca o secventa de comparatori care genereaza functiile de output pe baza inputurilor sale. Valsalam a folosit aceasta observatie in proiectarea algoritmului evolutiv descris mai jos.
-	
-\end{figure}
-
-
-\subsubsection{Simetrii in retele de sortare}
-O simetrie intr-o retea de sortare este o operatie pe setul de functii de output al retelei care nu afecteaza outputul retelei. Valsalam defineste formal operatie de simetrie  $\sigma_i$ pentru $1 \leq i \leq \mid\frac{n}{2}|$ care opereaza pe setul de functii de output din retea prin interschimbarea functiei $f_i$ si dualei $f_{n+1-i}$, interschimband conjunctia si disjuctia dintre ele. Compozitia simetriilor este tot o simetrie, fiind inchisa la compozitie. 
-
-\subsubsection{Minimizarea numarului de comparatori necesari}
-
-Minimizarea numarului de comparatori presupune gasirea comparatorilor ce pot fi impartiti pe mai multe fire.
-
-\subsubsection{Evoluarea retelelor minimale}
-
-Valsalam initializeaza evolutia cu o populatie de solutii produse de algoritmul greedy. Valoarea de \textit{fitness} a fiecarei solutii este $-1 \  \cdot $ \texttt{numarul de comparatori}, pentru ca imbunatatirea \textit{fitness}-ului sa rezulte intr-un numar mai mic de comparatori generati. La fiecare noua generatie, selectia se face prin metoda \textit{turneu} pe baza valorii de \textit{fitness} pentru a selecta indivizii din populatie pentru reproducere. La reproducere se muteaza reteaua parinte si se creeaza o retea de \textit{offspring} in doi pasi:
-\begin{enumerate}
-	\item Un comparator este ales in mod aleator din retea si apoi se trunchiaza reteaua dupa el, eliminand comparatorii ce urmeaza dupa el.
-	\item Algoritmul greedy este folosit pentru a adauga noi comparatori construind o noua retea. Pentru ca algoritmul greedy alege un comparator cu cea mai mare utilitate in mod aleator, aceasta mutatie exploreaza o noua combinatie de comparatori ce ar putea fi mult mai folositori decat comparatorul parinte.
-\end{enumerate}
-Aceasta abordare restrange spatiul de cautare la comparatorii generati de algorimtul greedy.
-SENSO[15] a fost rulat pe o populatie de marime 200 pentru 500 de generatii ca sa evolueze de retele de sortare optimale. La fiecare generatie, au selectate cele 100 de retele cu numarul minimal de comparatori pentru a estima modelul. Acelasi set de retele a fost copiat la urmatoarea generatie, fara modificari, ....
-
-Experimentul de mai sus a fost repetat de $20$ de ori pentru fiecare varianta a algoritmului greedy si pentru fiecare input $n \leq 23$
-
-Numarul de comparatori gasit de SENSO in corespondenta cu marimea reteli este reprezentat in figura de mai jos.
-
-\begin{figure}
-\centering
-\begin{tabu} to 1.19	 \textwidth {  X[0] | X[1]  |  X[2]  |  X[3] | X[4] | X[5] | X[6] | X[7] | X[8] | X[9] | X[10] | X[11] | X[12] }
- \hline
- n & 12 & 13 & 14 & 15 & 16 & 17 & 18 & 19 & 20 & 21 & 22 & 23\\
- \hline
- $C$  & 39 & 45 & 51 & 56 & 60 & 73 & 79 & 88 & 93 & 103 & 110 & 118\\
- \hline
- $C_2$ & 39 & 45 & 51 & 56 & 60 & \textbf{71} & \textbf{78} & \textbf{86} & \textbf{92} & \textbf{102} & \textbf{108} & 118 \\
- 
-\hline
-\end{tabu}
-\caption{Rezultate obtinute de Valsalam. Rezultatele sunt extrase din [15]. $C$ reprezinta numarul minim de comparatori cunoscut pana atunci pentru o retea cu $n$ inputuri, iar $C_2$ reprezinta numarul de comparatori obtinuti prin abordarea evolutiva. Au fost marcate in bold, retelele pentru care au fost scosi un numar de comparatori mai bun.}
-\end{figure}
-
-
-\subsection{Retelele optimale}
-
-\subsubsection{Prezentare}
-In aceasta sectiune a lucrarii dorim sa amintim despre \textit{retelele lui Green}, intrucat folosind metoda lui \textit{Green} de construire a retelelor obtinem numarul minimal de comparatori.
-
-Mai jos afisam rezultatul metodei lui \textit{Green} pentru o retea de marime $16$:
-
-\begin{figure}
-\centering
-\includegraphics[scale=1.0]{green_net}
-\\
-\caption{Reteaua de comparatori a lui green pentru un input $n = 16$}
-\end{figure}
-
-Acesta retea are $60$ de comparatori, care reprezinta cea mai mica valoare cunoscuta pentru o retea cu 16 inputuri[16][17]. Comparatorii dintr-o astfel de retea sunt simetric aranjati de la axa orizontala pana in mijlocul retelei. Acest tip de retele au reprezentat pentru unii cercetatorii obiectiv de studiu pentru dezvoltarea algoritmilor evolutivi care genereaza retele de sortare. 
-
-\subsection{Metode imperative de generare a retelelor de sortare}
-
-Exista mai multe metode imperative pentru a genera o retea de sortare. Cele mai usoare modalitati sunt de a generea o 
-retea bazata pe algoritmii de sortare bubble sort si insertion sort. In cazul primei optiuni se adauga un comparator intre
-firele $0$ si $1$, $1$ si $2$, ..., $n-1$ si $n$. Se reaia procesul de creere a comparatorilor inserand un comparator intre $0$ si $1$, ..., $n-2$ si $n-1$. Se repeta aceasta procedura de creere a comparatorilor pana la pasul in care inseram un singur comparator intre firele $0$ si $1$.
-
-In cazul unei insertion sorting network, o retea bazata pe insertion sort procesul este similar, singura diferenta este ca buclele de creare a comparatorilor sunt in ordine inversa fata de metoda precedenta. Astfel, prima data se creeaza un comparator 
-intre firul $0$ si $1$. Se creeaza un comparator intre $0$ si $1$, $2$. Pana cand se ajunge la pasul in care se generaza un comparator intre $0$ si $1$, ..., $n-1$ si $n$. 
-
-Un exemplu de bubble sorting network:
-
-\begin{figure}
-\centering
-\begin{tikzpicture}
-%\fill [gray!15] (1.5,1.5) -- (2.5,1.5) -- (2.5,2.5) -- (1.5,2.5) -- cycle;
-\foreach \a in {1,...,4}
-  \draw[thick] (0,\a) -- ++(8,0);
-\foreach \x in {{1,4},{1,3}, {2,3},{2,2},{3,2},{3,1},{4,4},{4,3},{5,3},{5, 2}, {6, 3}, {6, 4}}
-  \filldraw (\x) circle (1.5pt);
-\draw[thick] (1,4) -- (1,3);
-\draw[thick] (2,3) -- (2,2);
-\draw[thick] (3,2) -- (3,1);
-\draw[thick] (4,4) -- (4,3);
-\draw[thick] (5,3) -- (5,2);
-\draw[thick] (6,4) -- (6,3);
-\end{tikzpicture}
-\caption{Retea de sortata generata pe baza algoritmului \textit{Bubble Sort} cu $n=4$ inputuri. }
-\end{figure}
-
-Un exemplu de insertion sorting network:
-
-\begin{figure}
-\centering
-\begin{tikzpicture}
-%\fill [gray!15] (1.5,1.5) -- (2.5,1.5) -- (2.5,2.5) -- (1.5,2.5) -- cycle;
-\foreach \a in {1,...,4}
-  \draw[thick] (0,\a) -- ++(8,0);
-\foreach \x in {{1,4},{1,3}, {3,4},{3,3},{2,3},{2,2},{4,2},{4,1},{5,3},{5, 2}, {6, 3}, {6, 4}}
-  \filldraw (\x) circle (1.5pt);
-\draw[thick] (1,4) -- (1,3);
-\draw[thick] (3,4) -- (3,3);
-\draw[thick] (2,3) -- (2,2);
-\draw[thick] (4,2) -- (4,1);
-\draw[thick] (5,3) -- (5,2);
-\draw[thick] (6,4) -- (6,3);
-\end{tikzpicture}
-\caption{Retea de sortare generata pe baza algoritmului \textit{Insertion Sort} pentru $n=4$ inputuri.}
-\end{figure}
-
-Algoritmul imperativ pe care l-am folosit pentru a genera un bubble sorting network este:
-\begin{lstlisting}
-    def bubble_sorter(n):
-        if n <= 1:
-            return []
-
-        ret_val = []
-        for i in range(0, n - 1):
-            ret_val.append((i, i + 1))
-        ret_val += self.dummy_sorter(n - 1)
-        return ret_val
-\end{lstlisting}
-Pentru un numar de fire dat, $n$, generam lista de comparatori, adica conexiunile dintre firele din retea.
-%\break
-
-    Aceste arhitecturi de retele de sortare nu sunt optimale si vor sorta un sir de numere ca input in timp
-$O(n^2)$. Retelele optimale si cele mai des folosite in practica sunt bazate pe algoritmul bitonic sort, acestea ating complexitate de $O(nlog^2(n))$. Insa motivul pentru care am prezentat bubble sorting network si insertion sorting network este
-ca bazandu-ne pe acesti algoritmi am generat datele de antrenament pentru modelul dezvoltat. Motivatia ar fi ca, cel putin din experimentele realizate in cadrul acestui proiect, este mai usor de antrenat un model care sa produca date relevante atunci cand primeste date de antrenament generate pe baza acestor algoritmi.
-
-\subsection{Aplicatii}
-Cea mai la indemana aplicatie in practica a retelelor de sortare o reprezinta sortarea pe placile grafice. Placile grafice dispozitive orientate puternic spre paralelizarea instructiunilor, pe arhitectura \textit{single-instruction, multiple data (SIMD}. Si avand in vedere si ca placile grafice depasesc in performanta CPU-ul cand vine vorba de algoritmi cu limita de memorie si timp de calcul, retelele de sortare devin o optiune eficienta.
-
-
-\section{Retele neuronale, prezentare}
-
-Retelele neuronale reprezinta o ramura a inteligentei artificiale. Sunt modele abstracte ce incearca sa simuleze creierul uman
-in modul de intercationare cu natura. O retea neuronala este compusa din neuroni artificiali. Neuronii artificiali din retea sunt dispusi pe mai multe straturi. Din exterior le putem vedea ca pe un black box conectat la un strat de neuroni de input, responabil de preluarea inputlui si la un strat de neuroni de output, responsabil pentru a genera outputul. In functie de neuronii din stratul de output care se vor activa se decodifica rezultatul produs de retea.
-
-\subsection{Arhitecturi de retele neuronale}
-Retelele neuronale convolutionale sunt modele simple, proiectate sa primeasca un set de input fix si sa produca un set output output de marime fixa. In practica, acest tip de retele sunt ideale pentru computer vision. Sunt mult mai eficiente din punct de vedere al resurselor consumate la sarcini precum recunoasterea de obiecte in imagini. 
-
-Retelele neuronale recurente se deosebesc de cele convolutionale prin posibilitatea de a primi un set de input variabil si a produce un set de output variabil. In practica se folosesc la procesarea limbajului natural. Acest tip de retele neuronale sunt ideale si pentru rezolvarea problemei de generare a retelelor de sortare, intrucat putem codifica numarul de fire din retea ca o secventa de lungime variabila, iar rezultatul, respectiv setul de comparatori pentru numarul de fire dat poate varia. Pe langa aceste considerente, acest tip de retele contin si o memorie atasata.
-
-Un caz particular de retele neuronale recurente sunt \textit{Neural Turing Machines}. Acestea fiind optimizate in a invata algoritmi imperativi simpli. Un exemplu ar fi problema sortarii, rezolvata in mod traditional cu un algoritm imperativ poate fi rezolvata folosind acest tip de retele. Pentru aceasta, reteaua va primi ca input tuple de forma $(X, Y)$. Unde $X$ reprezinta un sir de numere aflate in ordine aleatoare, iar $Y$ reprezinta varianta sortata a sirului $X$ cu un algoritm imperativ de sortare. Odata antrenata pe un set suficient de mare de date de acest fel, modelul va invata practic sa aplice algoritmul de sortare folosit pe componenta $Y$. 
-
-Motivul prezentarii scenariului de mai sus este ca hiperparametrii si structura straturilor de neuroni dintr-o retea neuronala folosita la sortarea de numere sunt similari in proportie foarte mare cu cei din reteaua proiectata sa genereze retele de sortare.
-
-\subsection{Neural Turing Machine (NTM)}
-
-Retelele NTM fac partea din clasa retelelor neuronale recurente si sunt introduse relativ recent. Au fost introduse intr-un articol publicat de Alex Graves in 2014. Acest model de retea neuronala combinata capacitatea de pattern matching a retelelor neuronale cu capacitatea algoritmica a calculatoarelor programabile. Mai exact, putem folosi acest model de retea pentru a invata algoritmti simpli. In paperul introdus de Graves sunt aduse rezultate pentru algoritmi de copiere a unui sir sau sortare. Aceste aspecte ne inspira o probabilitate mare ca o retea bazata pe acest model poate produce rezultate multumitoare pentro problema abordata.
-
-\subsubsection{Descriere}
-
-Neural Turing Machines sunt inspirate din doua lumi: Machine Learning si Teoria Computabilitatii. Prima le permite calculatoarelor sa realizeze taskuri care, desi pentru oameni sunt usoare, se credeau grele pentru calculatoare, precum computer vision. A doua defineste formal lucrurile de care este capabil un calculator. 
-
-Legatura dintre inteligenta artificiala si teoria computatiei in 1940. Modelul introdus de el, Masina Turing, e un model computational clasic care opereaza pe o banda de memorie infinita si un cap care poate sa scrie sau sa citeasca. Pe baza acestor aceste rezultate se inspira si Neural Turing Machines.
-
-Un exemplu de NTM desfasurat in timp:
-
-
-\begin{figure}
-\centering
-\includegraphics[scale=0.2]{ntm}
-\\
-\caption{Arhitectura unui Neural Turing Machine. Sursa: \texttt{https://medium.com/snips-ai/
-ntm-lasagne-a-library-for-neural-turing-machines
--in-lasagne-2cdce6837315}}
-\end{figure}
-
-Componenta de controller din cadrul unui Neural Turing Machine este o retea neuronala care pune la dispozitie reprezentarea interna a inputului care este folosit de capetele de scriere si citire ca sa poate interactiona cu memoria. Reprezentarea aceasta nu este identica cu cea stocata in memorie. Tipul de controler pe care il alegem reprezinta cea mai semnificativa alegere arhitecturala. Controllerul poate fi fie o retea feed-forward, fie o retea recurenta.
-
-Capetele de scriere si citire sunt singurele componente din cadrul unui Neural Turing Machine care interactioneaza in mod direct cu memoria. Intern, comportamentul fiecarui dintre capete este controlat de vectorul de weighturi care este actualizat la fiecare pas in timp. Fiecare weight din vector corespunde cu gradul de interactiune cu fiecare celula din memorie. Un weight de 1 focuseaza atentia NTM-ului spre celula respectiva.
-
-Reprezentare vizuala a notiunilor descrise mai sus:
-
-\begin{figure}
-\centering
-\includegraphics[scale=0.3]{rw_head}
-\\
-\caption{Arhitectura capului de scriere/citire a unui \textit{Neural Turing Machine}. Sursa: \texttt{https://medium.com/snips-ai/
-ntm-lasagne-a-library-for-neural-turing-machines
--in-lasagne-2cdce6837315}}
-\end{figure}
-
-In continuare prezentam succint partile critice din aceasta arhitectura, asa cum au fost descrise de \textit{Graves} in [21].
-
-\subsubsection{Operatia de citire}
-Fie $M_t$ continutul matricii $N \times M$ de memorie la timpul $t$. $N$ reprezentand numarul de celule de meorie, iar $M$ este marimea vectorului de la fiecare locatie. Fie $w_t$ un vector de \textit{weighturi} peste $N$ locatii generat de capul de citire. Pentru ca toate \textit{weight}-urile sunt normalizate, ce $N$ elemente ale $w_t(i)$ suporta urmatoarea constrangere:
-
-$$\sum_t w_t(i)= 1, 0 \leq w_t(i) \leq 1,\ \ \ \forall i $$
-
-Vectorul $r_t$ de lungime $M$ returnat de capul de citire este definit:
-
-$$r_t \leftarrow \sum_{t} w_t(i)M_t(i) $$
-\subsubsection{Operatia de scriere}
-Fiecare operatie de scriere din aceasta arhitecura este impartita in doua parti:
-\begin{enumerate}
-	\item o operatie de stergere (\textit{erase})
-	\item o operatie de adaugare (\textit{add})
-\end{enumerate}
-
-Fiind dat un vector de weighturi $w_t$ generat de capul de scriere la timpul $t$, si un vector de stergere (\textit{erase vector}) $e_t$ cu elemente in $(0, 1)$, vectorii de memorie $M_{t-1}(i)$ sunt modificati astfel:
-
-$$ \tilde{M}_t(i) \leftarrow M_{t-1}(i)[1 - w_t(i)e_t] $$
-
-unde $1$ reprezinta un vector linie cu elemente $1$. Elementele de la o locatie de memorie sunt setate la $0$ daca atat \textit{weight}-urile de la acea locatie, cat si elementul de trebuie sters sunt $1$. Altfel, daca oricare dintre \textit{weight}-uri sau elementul ce trebuie sters sunt $0$, meoria este lasata neschimbata. 
-
-Capul de citire si un vector $a_t$ de lungime $M$ ce este adaugat in memorie dupa pasul de stergere:
-
-$$ M_t(i) \leftarrow \tilde{M}_t(i) + w_t(i)a_t $$
-
-\subsubsection{Mecanismul de adresare}
-
-In articolul introdus de \textit{Graves}, adresarea se realizeaza prin doua modalitati:
-\begin{enumerate}
-	\item \textbf{In functie de continut}.
-	\item \textbf{In functie de locatie}. 
-\end{enumerate}
-
-Vom descrie doar prima metoda
-
-In \textit{adresarea pe baza de continut} fiecare cap de citire sau scriere va produce un vector $k_t$ de lungime $M$ care este comparat cu fiecare vector $M_t(i)$ printr-o masura de similaritate $K[\cdot, \cdot]$. Sistemul de adresare pe baza continutului produce un vector normalizat $w_{t}^e$:
-	$$ w_{t}^e = \frac{\exp{(\beta_tK[k_t, M_t(i)])}}{\sum_j \exp{(\beta_tK[k_t, M_t(j)])}}$$
-	
-	In articolul lui \textit{Graves} $K$ este definit:
-	$$ K[u, v] = \frac{u \cdot v}{||u|| \cdot ||v||} $$
-	
-
-\subsubsection{Aplicatii}
-
-\textit{Neural Turing Machines} inca se afla sub cercetare activa. Utilitatea acestei arhitecturi de retele neuronale este data posibilitatea unui model sa invete un \textit{program}.
 
 \section{Tehnologii folosite}
 
@@ -787,7 +792,7 @@ In cadrul proiectului am folosit mai multe module pe care le mentionam succint i
 
 Java este un limbaj de programare orientat-obiect, puternic tipizat, conceput de către James Gosling la Sun Microsystems (acum filială Oracle) la începutul anilor ʼ90, fiind lansat în 1995. Cele mai multe aplicații distribuite sunt scrise în Java, iar noile evoluții tehnologice permit utilizarea sa și pe dispozitive mobile gen telefon, agenda electronică, palmtop etc. În felul acesta se creează o platformă unică, la nivelul programatorului, deasupra unui mediu eterogen extrem de diversificat. Acesta este utilizat în prezent cu succes și pentru programarea aplicațiilor destinate intranet-urilor
 
-In proiect, Java a fost folosit la crearea \textit{backe-ndului} pentru interfata web. Motivatia alegerii este experienta puternica anterioara a autorului cu acest limba de programare.
+In proiect, Java a fost folosit la crearea \textit{back-endului} pentru interfata web. Motivatia alegerii este experienta puternica anterioara a autorului cu acest limba de programare.
 
 \subsection{Spring Boot}
 
@@ -804,7 +809,7 @@ RaphaelJS reprezinta biblioteca de JavaScript folosita pentru desenarea in brows
 
 \subsection{Twitter Bootstrap}
 
-Twitter Bootstrap este un framework web pentru componenta de frontend. Se pun la dispozitie mai multe clase CSS pentru crearea de componente vizuale precum butoane, bare de meniu, cat si un mecanism specific de de pozitionare a continutului.
+Twitter Bootstrap este un framework web pentru componenta de frontend. Se pun la dispozitie mai multe clase CSS pentru crearea de componente vizuale precum butoane, bare de meniu, cat si un mecanism specific de pozitionare a continutului.
 
 Motivul pentru care am introdus si aceasta dependinta in stiva de tehnologii folosita in proiect si nu am creat toata interfata in RaphaelJS este performanta. Desenarea intregului design si implementarea si mecanicilor din spate (precum gestionarea apasarilor de buton) ar fi fost remarcabil mai lenta. Ar fi fost o scadere redundanta in performanta.
 
