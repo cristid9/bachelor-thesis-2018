@@ -644,16 +644,45 @@ ntm-lasagne-a-library-for-neural-turing-machines
 -in-lasagne-2cdce6837315}}
 \end{figure}
 
+In continuare prezentam succint partile critice din aceasta arhitectura, asa cum au fost descrise de \textit{Graves} in [21].
+
 \subsubsection{Operatia de citire}
-In articolul introdus de \textit{Graves}[21]
+Fie $M_t$ continutul matricii $N \times M$ de memorie la timpul $t$. $N$ reprezentand numarul de celule de meorie, iar $M$ este marimea vectorului de la fiecare locatie. Fie $w_t$ un vector de \textit{weighturi} peste $N$ locatii generat de capul de citire. Pentru ca toate \textit{weight}-urile sunt normalizate, ce $N$ elemente ale $w_t(i)$ suporta urmatoarea constrangere:
 
+$$\sum_t w_t(i)= 1, 0 \leq w_t(i) \leq 1,\ \ \ \forall i $$
 
+Vectorul $r_t$ de lungime $M$ returnat de capul de citire este definit:
+
+$$r_t \leftarrow \sum_{t} w_t(i)M_t(i) $$
 \subsubsection{Operatia de scriere}
+Fiecare operatie de scriere din aceasta arhitecura este impartita in doua parti:
+\begin{enumerate}
+	\item o operatie de stergere (\textit{erase})
+	\item o operatie de adaugare (\textit{add})
+\end{enumerate}
 
+Fiind dat un vector de weighturi $w_t$ generat de capul de scriere la timpul $t$, si un vector de stergere (\textit{erase vector}) $e_t$ cu elemente in $(0, 1)$, vectorii de memorie $M_{t-1}(i)$ sunt modificati astfel:
 
+$$ \tilde{M}_t(i) \leftarrow M_{t-1}(i)[1 - w_t(i)e_t] $$
 
-\subsubsection{Operatia de adresare}
+unde $1$ reprezinta un vector linie cu elemente $1$. Elementele de la o locatie de memorie sunt setate la $0$ daca atat \textit{weight}-urile de la acea locatie, cat si elementul de trebuie sters sunt $1$. Altfel, daca oricare dintre \textit{weight}-uri sau elementul ce trebuie sters sunt $0$, meoria este lasata neschimbata. 
 
+Capul de citire si un vector $a_t$ de lungime $M$ ce este adaugat in memorie dupa pasul de stergere:
+
+$$ M_t(i) \leftarrow \tilde{M}_t(i) + w_t(i)a_t $$
+
+\subsubsection{Mecanismul de adresare}
+
+Adresarea se realizeaza prin doua modalitati:
+\begin{enumerate}
+	\item \textbf{In functie de continut}. Fiecare cap de citire sau scriere va produce un vector $k_t$ de lungime $M$ care este comparat cu fiecare vector $M_t(i)$ printr-o masura de similaritate $K[\cdot, \cdot]$. Sistemul de adresare pe baza continutului produce un vector normalizat $w_{t}^e$:
+	$$ w_{t}^e = \frac{\exp{(\beta_tK[k_t, M_t(i)])}}{\sum_j \exp{(\beta_tK[k_t, M_t(j)])}}$$
+	
+	In articolul lui \textit{Graves} $K$ este definit:
+	$$ K[u, v] = \frac{u \cdot v}{||u|| \cdot ||v||} $$
+	
+	\item \textbf{In functie de locatie}
+\end{enumerate}
 
 
 \subsubsection{Aplicatii}
